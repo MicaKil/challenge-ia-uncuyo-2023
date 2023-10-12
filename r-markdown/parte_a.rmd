@@ -1,0 +1,39 @@
+---
+title: "Parte A"
+output: html_document
+author: "Micaela Del Longo @MicaKil"
+---
+
+## PARTE A
+Antes de realizar un primer envío se deben realizar las siguientes actividades:
+
+### Ejercicio 1
+
+1. Dado el archivo arbolado-mendoza-dataset.csv, seleccionar de manera uniformemente aleatoria el 20% del conjunto de datos y crear un nuevo archivo con el nombre de arbolado-mendoza-dataset-validation.csv y el 80% restante con el nombre de arbolado-mendoza-dataset-train.csv
+
+```{r}
+#Dado el archivo arbolado-mendoza-dataset.csv, seleccionar de manera uniformemente aleatoria el 20% del conjunto de datos y crear un nuevo archivo con el nombre de arbolado-mendoza-dataset-validation.csv y el 80% restante con el nombre de arbolado-mendoza-dataset-train.csv
+
+data <- read.csv("data/arbolado-mza-dataset.csv")
+
+num_filas <- nrow(data) # obtener el número de filas en los datos
+
+# definir la proporción para dividir los datos (80% de entrenamiento, 20% de validación)
+proporcion_entrenamiento <- 0.8
+
+# calcular el número de filas para los datos de entrenamiento y validación
+num_entrenamiento <- round(num_filas * proporcion_entrenamiento)
+num_validacion <- num_filas - num_entrenamiento
+
+# generar un conjunto de índices aleatorios sin reemplazo para las filas de validación
+indices_validacion <- sample(1:num_filas, num_validacion)
+
+# dividir los datos en conjuntos de entrenamiento y validación
+datos_entrenamiento <- data[-indices_validacion, ]
+datos_validacion <- data[indices_validacion, ]
+
+# guardar los datos en archivos CSV separados
+write.csv(datos_entrenamiento, "arbolado-mendoza-dataset-train.csv", row.names = FALSE)
+write.csv(datos_validacion, "arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
+```
+

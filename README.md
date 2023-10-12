@@ -11,8 +11,8 @@ Antes de realizar un primer envío se deben realizar las siguientes actividades:
 
 1. Bajar el archivo arbolado-mendoza-dataset.csv, el mismo se encuentra en formato CSV (comma separated values).
 
-   1. Seleccionar de manera uniformemente aleatoria el 20% del conjunto de datos y crear un nuevo archivo con el nombre de 
-     arbolado-mendoza-dataset-validation.csv y el 80% restante con el nombre de arbolado-mendoza-dataset-train.csv
+2. Seleccionar de manera uniformemente aleatoria el 20% del conjunto de datos y crear un nuevo archivo con el nombre de 
+  arbolado-mendoza-dataset-validation.csv y el 80% restante con el nombre de arbolado-mendoza-dataset-train.csv
 
 ### Ejercicio 2
 A partir del archivo arbolado-mendoza-dataset-train.csv responder las siguientes preguntas:
