@@ -4,15 +4,14 @@ output: html_document
 author: "Micaela Del Longo @MicaKil"
 ---
 
-## PARTE A
 Antes de realizar un primer envío se deben realizar las siguientes actividades:
 
-### Ejercicio 1
+# Ejercicio 1
 
-1. Dado el archivo arbolado-mendoza-dataset.csv, seleccionar de manera uniformemente aleatoria el 20% del conjunto de datos y crear un nuevo archivo con el nombre de arbolado-mendoza-dataset-validation.csv y el 80% restante con el nombre de arbolado-mendoza-dataset-train.csv
+Dado el archivo arbolado-mendoza-dataset.csv, seleccionar de manera uniformemente aleatoria el 20% del conjunto de datos y crear un nuevo archivo con el nombre de arbolado-mendoza-dataset-validation.csv y el 80% restante con el nombre de arbolado-mendoza-dataset-train.csv
 
 ```{r}
-data <- read.csv("data/arbolado-mza-dataset.csv")
+data <- read.csv("../data/arbolado-mza-dataset.csv")
 
 num_filas <- nrow(data)
 
@@ -30,11 +29,11 @@ indices_validacion <- sample(1:num_filas, num_validacion)
 datos_entrenamiento <- data[-indices_validacion, ]  # el operador "-" indica que se excluyen los índices de validación
 datos_validacion <- data[indices_validacion, ]
 
-write.csv(datos_entrenamiento, "arbolado-mendoza-dataset-train.csv", row.names = FALSE)
-write.csv(datos_validacion, "arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
+# write.csv(datos_entrenamiento, "arbolado-mendoza-dataset-train.csv", row.names = FALSE)
+# write.csv(datos_validacion, "arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
 ```
 
-### Ejercicio 2
+# Ejercicio 2
 A partir del archivo arbolado-mendoza-dataset-train.csv responder las siguientes preguntas:
 
 1. ¿Cuál es la distribución de la clase inclinacion_peligrosa?
@@ -48,7 +47,7 @@ respuesta.
 library(dplyr)
 library(ggplot2)
 
-data <- read.csv("data/arbolado-mendoza-dataset-train.csv")
+data <- read.csv("../data/arbolado-mendoza-dataset-train.csv")
 
 # Pregunta 1: ¿Cuál es la distribución de la clase inclinacion_peligrosa?
 ggplot(data, aes(x = factor(inclinacion_peligrosa), fill = factor(inclinacion_peligrosa))) +
@@ -57,7 +56,7 @@ ggplot(data, aes(x = factor(inclinacion_peligrosa), fill = factor(inclinacion_pe
     labs(x = "Inclinacion Peligrosa", y = "Frecuencia") +
     ggtitle("Distribucion de la Clase Inclinacion Peligrosa")
 
-ggsave("pics/2_1_distribucion_inclinacion_peligrosa.png", plot = last_plot(), width = 6, height = 4)
+# ggsave("pics/2_1_distribucion_inclinacion_peligrosa.png", plot = last_plot(), width = 6, height = 4)
 
 
 # Pregunta 2: ¿Se puede considerar alguna sección más peligrosa que otra?
@@ -75,7 +74,7 @@ ggplot(secciones_peligrosas, aes(x = factor(seccion), y = peligrosidad, fill = f
     labs(x = "Seccion Administrativa", y = "Proporcion de Inclinacion Peligrosa") +
     ggtitle("Peligrosidad por Seccion Administrativa")
 
-ggsave("pics/2_2_peligrosidad_secciones.png", plot = last_plot(), width = 8, height = 6)
+# ggsave("pics/2_2_peligrosidad_secciones.png", plot = last_plot(), width = 8, height = 6)
 
 
 # Pregunta 3: ¿Se puede considerar alguna especie más peligrosa que otra?
@@ -92,6 +91,6 @@ ggplot(especies_peligrosas, aes(x = reorder(especie, -peligrosidad), y = peligro
     ggtitle("Peligrosidad por Especie de Arbol") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-ggsave("pics/2_3_peligrosidad_especies.png", plot = last_plot(), width = 8, height = 6)
+# ggsave("pics/2_3_peligrosidad_especies.png", plot = last_plot(), width = 8, height = 6)
 
 ```
