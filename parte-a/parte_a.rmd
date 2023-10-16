@@ -11,7 +11,7 @@ Antes de realizar un primer envío se deben realizar las siguientes actividades:
 Dado el archivo arbolado-mendoza-dataset.csv, seleccionar de manera uniformemente aleatoria el 20% del conjunto de datos y crear un nuevo archivo con el nombre de arbolado-mendoza-dataset-validation.csv y el 80% restante con el nombre de arbolado-mendoza-dataset-train.csv
 
 ```{r}
-data <- read.csv("../data/arbolado-mza-dataset.csv")
+data <- read.csv("data/arbolado-mza-dataset.csv")
 
 num_filas <- nrow(data)
 
@@ -47,8 +47,11 @@ respuesta.
 library(dplyr)
 library(ggplot2)
 
-data <- read.csv("../data/arbolado-mendoza-dataset-train.csv")
+data <- read.csv("data/arbolado-mendoza-dataset-train.csv")
 
+```
+
+```{r}
 # Pregunta 1: ¿Cuál es la distribución de la clase inclinacion_peligrosa?
 ggplot(data, aes(x = factor(inclinacion_peligrosa), fill = factor(inclinacion_peligrosa))) +
     geom_bar() +
@@ -58,11 +61,13 @@ ggplot(data, aes(x = factor(inclinacion_peligrosa), fill = factor(inclinacion_pe
 
 # ggsave("pics/2_1_distribucion_inclinacion_peligrosa.png", plot = last_plot(), width = 6, height = 4)
 
+```
 
+```{r}
 # Pregunta 2: ¿Se puede considerar alguna sección más peligrosa que otra?
 # crea un nuevo conjunto de datos "secciones_peligrosas" con resumen de peligrosidad por sección
 secciones_peligrosas <- data %>%
-    group_by(seccion, nombre_seccion) %>%  # agrupar por sección y nombre de sección
+    group_by(seccion) %>%  # agrupar por sección
     # resumen de peligrosidad por sección -> total_count = n() calcula el número total de filas en cada grupo
     summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
     # mutate agrega una nueva columna peligrosidad la cual se calcula dividiendo peligrosa_count entre total_count
@@ -74,9 +79,26 @@ ggplot(secciones_peligrosas, aes(x = factor(seccion), y = peligrosidad, fill = f
     labs(x = "Seccion Administrativa", y = "Proporcion de Inclinacion Peligrosa") +
     ggtitle("Peligrosidad por Seccion Administrativa")
 
-# ggsave("pics/2_2_peligrosidad_secciones.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/2_2_peligrosidad_secciones.png", plot = last_plot(), width = 8, height = 6)
 
+nombre_secciones_peligrosas <- data %>%
+    group_by(nombre_seccion) %>%
+    # resumen de peligrosidad por sección -> total_count = n() calcula el número total de filas en cada grupo
+    summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
+    # mutate agrega una nueva columna peligrosidad la cual se calcula dividiendo peligrosa_count entre total_count
+    mutate(peligrosidad = peligrosa_count / total_count)
 
+ggplot(nombre_secciones_peligrosas, aes(x = factor(nombre_seccion), y = peligrosidad, fill = factor(nombre_seccion))) +
+geom_bar(stat = "identity") +  # representa las alturas de las barras tal como se proporcionan en los datos
+scale_fill_brewer(palette = "Set3") +
+labs(x = "Nombre Seccion Administrativa", y = "Proporcion de Inclinacion Peligrosa") +
+ggtitle("Peligrosidad por Seccion Administrativa (Nombre)") +
+theme(axis.text.x = element_text(angle = 45, hjust = 1))
+
+#ggsave("pics/2_2_peligrosidad_nombre_secciones.png", plot = last_plot(), width = 8, height = 6)
+```
+
+```{r}
 # Pregunta 3: ¿Se puede considerar alguna especie más peligrosa que otra?
 # crea un nuevo conjunto de datos "especies_peligrosas" con resumen de peligrosidad por especie
 especies_peligrosas <- data %>%
@@ -86,11 +108,11 @@ especies_peligrosas <- data %>%
 
 ggplot(especies_peligrosas, aes(x = reorder(especie, -peligrosidad), y = peligrosidad, fill = reorder(especie, -peligrosidad))) +
     geom_bar(stat = "identity") +
-    scale_fill_manual(values = rainbow(length(unique(especies_peligrosas$especie)))) + # Colores aleatorios
+    scale_fill_manual(values = rainbow(length(unique(especies_peligrosas$especie)))) +
     labs(x = "Especie del Arbol", y = "Proporcion de Inclinacion Peligrosa") +
     ggtitle("Peligrosidad por Especie de Arbol") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-# ggsave("pics/2_3_peligrosidad_especies.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/2_3_peligrosidad_especies.png", plot = last_plot(), width = 8, height = 6)
 
 ```
