@@ -1,8 +1,3 @@
-Colocar un archivo con el nombre tp7-eda.md que contenga:
-1. ~~Las respuestas a las preguntas del punto 2 junto a sus correspondientes visualizaciones.~~ 
-2. Las visualizaciones (histogramas) generadas en el punto 3  
-3. Los criterios de corte seleccionados en el punto 3.
-
 # Ejercicio 2
 A partir del archivo arbolado-mendoza-dataset-train.csv responder las siguientes preguntas:
 
