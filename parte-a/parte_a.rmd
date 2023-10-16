@@ -8,7 +8,9 @@ Antes de realizar un primer envío se deben realizar las siguientes actividades:
 
 # Ejercicio 1
 
-Dado el archivo arbolado-mendoza-dataset.csv, seleccionar de manera uniformemente aleatoria el 20% del conjunto de datos y crear un nuevo archivo con el nombre de arbolado-mendoza-dataset-validation.csv y el 80% restante con el nombre de arbolado-mendoza-dataset-train.csv
+Dado el archivo arbolado-mendoza-dataset.csv, seleccionar de manera uniformemente aleatoria el 20% del conjunto de datos
+y crear un nuevo archivo con el nombre de arbolado-mendoza-dataset-validation.csv y el 80% restante con el nombre de
+arbolado-mendoza-dataset-train.csv
 
 ```{r}
 data <- read.csv("data/arbolado-mza-dataset.csv")
@@ -116,3 +118,123 @@ ggplot(especies_peligrosas, aes(x = reorder(especie, -peligrosidad), y = peligro
 #ggsave("pics/2_3_peligrosidad_especies.png", plot = last_plot(), width = 8, height = 6)
 
 ```
+
+# Ejercicio 3
+
+A partir del archivo arbolado-mendoza-dataset-train.csv:
+
+## 1. Generar un histograma de frecuencia para la variable circ_tronco_cm. Probar con diferentes números de bins.
+
+```{r}
+# Cargar la biblioteca necesaria
+library(ggplot2)
+arbolado <- read.csv("data/arbolado-mendoza-dataset-train.csv")
+```
+
+```{r}
+ggplot(arbolado, aes(x = circ_tronco_cm)) +
+    geom_histogram(bins = 10, aes(fill = after_stat(count))) +
+    scale_fill_gradient(low = "blue", high = "red") +
+    labs(title = "Histograma de Circunferencia del Tronco (Bins = 10)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
+    scale_x_continuous(breaks = seq(0, max(arbolado$circ_tronco_cm), by = 25))
+
+ggsave("pics/3_1_histograma_circ_tronco_bins_10.png", plot = last_plot(), width = 8, height = 6)
+```
+
+```{r}
+ggplot(arbolado, aes(x = circ_tronco_cm)) +
+    geom_histogram(bins = 20, aes(fill = after_stat(count))) +
+    scale_fill_gradient(low = "blue", high = "red") +
+    labs(title = "Histograma de Circunferencia del Tronco (Bins = 20)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
+    scale_x_continuous(breaks = seq(0, max(arbolado$circ_tronco_cm), by = 25))
+
+ggsave("pics/3_1_histograma_circ_tronco_bins_20.png", plot = last_plot(), width = 8, height = 6)
+```
+
+```{r}
+ggplot(arbolado, aes(x = circ_tronco_cm)) +
+    geom_histogram(bins = 30, aes(fill = after_stat(count))) +
+    scale_fill_gradient(low = "blue", high = "red") +
+    labs(title = "Histograma de Circunferencia del Tronco (Bins = 30)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
+    scale_x_continuous(breaks = seq(0, max(arbolado$circ_tronco_cm), by = 25))
+
+ggsave("pics/3_1_histograma_circ_tronco_bins_30.png", plot = last_plot(), width = 8, height = 6)
+```
+
+```{r}
+ggplot(arbolado, aes(x = circ_tronco_cm)) +
+    geom_histogram(bins = 40, aes(fill = after_stat(count))) +
+    scale_fill_gradient(low = "blue", high = "red") +
+    labs(title = "Histograma de Circunferencia del Tronco (Bins = 40)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
+    scale_x_continuous(breaks = seq(0, max(arbolado$circ_tronco_cm), by = 25))
+
+ggsave("pics/3_1_histograma_circ_tronco_bins_40.png", plot = last_plot(), width = 8, height = 6)
+```
+
+```{r}
+ggplot(arbolado, aes(x = circ_tronco_cm)) +
+    geom_histogram(bins = 50, aes(fill = after_stat(count))) +
+    scale_fill_gradient(low = "blue", high = "red") +
+    labs(title = "Histograma de Circunferencia del Tronco (Bins = 50)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
+    scale_x_continuous(breaks = seq(0, max(arbolado$circ_tronco_cm), by = 25))
+
+ggsave("pics/3_1_histograma_circ_tronco_bins_50.png", plot = last_plot(), width = 8, height = 6)
+```
+
+## 2. Repetir el punto 1) pero separando por la clase de la variable inclinación_peligrosa.
+
+```{r}
+ggplot(arbolado, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
+    geom_histogram(bins = 10) +
+    labs(title = "Histograma de Circunferencia del Tronco por Clase de Inclinacion (Bins = 10)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
+    scale_fill_discrete(name = "Inclinacion") +
+    scale_x_continuous(breaks = seq(0, max(arbolado$circ_tronco_cm), by = 25))
+
+ggsave("pics/3_2_histograma_circ_tronco_bins_10_separado_por_inclinacion.png", plot = last_plot(), width = 8, height = 6)
+```
+
+```{r}
+ggplot(arbolado, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
+    geom_histogram(bins = 20) +
+    labs(title = "Histograma de Circunferencia del Tronco por Clase de Inclinacion (Bins = 20)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
+    scale_fill_discrete(name = "Inclinacion") +
+    scale_x_continuous(breaks = seq(0, max(arbolado$circ_tronco_cm), by = 25))
+
+ggsave("pics/3_2_histograma_circ_tronco_bins_20_separado_por_inclinacion.png", plot = last_plot(), width = 8, height = 6)
+```
+
+```{r}
+ggplot(arbolado, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
+    geom_histogram(bins = 30) +
+    labs(title = "Histograma de Circunferencia del Tronco por Clase de Inclinacion (Bins = 30)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
+    scale_fill_discrete(name = "Inclinacion") +
+    scale_x_continuous(breaks = seq(0, max(arbolado$circ_tronco_cm), by = 25))
+
+ggsave("pics/3_2_histograma_circ_tronco_bins_30_separado_por_inclinacion.png", plot = last_plot(), width = 8, height = 6)
+```
+
+```{r}
+ggplot(arbolado, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
+    geom_histogram(bins = 40) +
+    labs(title = "Histograma de Circunferencia del Tronco por Clase de Inclinacion (Bins = 40)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
+    scale_fill_discrete(name = "Inclinacion") +
+    scale_x_continuous(breaks = seq(0, max(arbolado$circ_tronco_cm), by = 25))
+
+ggsave("pics/3_2_histograma_circ_tronco_bins_40_separado_por_inclinacion.png", plot = last_plot(), width = 8, height = 6)
+```
+
+```{r}
+ggplot(arbolado, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
+    geom_histogram(bins = 50) +
+    labs(title = "Histograma de Circunferencia del Tronco por Clase de Inclinacion (Bins = 50)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
+    scale_fill_discrete(name = "Inclinacion") +
+    scale_x_continuous(breaks = seq(0, max(arbolado$circ_tronco_cm), by = 25))
+
+ggsave("pics/3_2_histograma_circ_tronco_bins_50_separado_por_inclinacion.png", plot = last_plot(), width = 8, height = 6)
+```
+
+## 3. Crear una nueva variable categórica de nombre circ_tronco_cm_cat a partir circ_tronco_cm, en donde puedan asignarse solo 4 posibles valores \[muy alto, alto, medio, bajo]. Utilizar la información del punto b para seleccionar los puntos de corte para cada categoría.
+
+## 4. Guardar el nuevo dataframe bajo el nombre de arbolado-mendoza-dataset-circ_tronco_cm-train.csv
+
+
