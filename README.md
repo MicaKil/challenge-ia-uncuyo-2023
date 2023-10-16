@@ -133,7 +133,7 @@ p<-predict(tree_model,data_val,type='class')
 4. Colocar un archivo con el nombre tp7-classificadores.md que contenga:
    1. La matriz de confusión para el clasificador aleatorio y las métricas correspondientes. (tabla)
    2. La matriz de confusión para el clasificador por clase mayoritaria y las métricas correspondientes. (tabla)
-5. Colocar en un archivo con el nombre  tp7-cv.md:
+5. Colocar en un archivo con el nombre tp7-cv.md:
    1. El código (en un bloque de código) de las funciones create_folds() y cross_validation()
    2. Una tabla con los resultados (media y desviación estándar de las métricas seleccionadas) de aplicar el 
    clasificador un árbol de decisión en los distintos conjuntos.

@@ -80,25 +80,29 @@ A partir del archivo arbolado-mendoza-dataset-train.csv:
 ## 2. Repetir el punto 1) pero separando por la clase de la variable inclinación_peligrosa.
 
 <div style="text-align:center">
-    <img src="pics/3_2_histograma_circ_tronco_bins_10_separado_por_inclinacion.png"/>
+    <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_10.png"/>
 </div>
 
 <div style="text-align:center">
-    <img src="pics/3_2_histograma_circ_tronco_bins_20_separado_por_inclinacion.png"/>
+    <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_20.png"/>
 </div>
 
 <div style="text-align:center">
-    <img src="pics/3_2_histograma_circ_tronco_bins_30_separado_por_inclinacion.png"/>
+    <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_30.png"/>
 </div>
 
 <div style="text-align:center">
-    <img src="pics/3_2_histograma_circ_tronco_bins_40_separado_por_inclinacion.png"/>
+    <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_40.png"/>
 </div>
 
 <div style="text-align:center">
-    <img src="pics/3_2_histograma_circ_tronco_bins_50_separado_por_inclinacion.png"/>
+    <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_50.png"/>
 </div>
 
 ## 3. Crear una nueva variable categórica de nombre circ_tronco_cm_cat a partir circ_tronco_cm, en donde puedan asignarse solo 4 posibles valores \[muy alto, alto, medio, bajo]. Utilizar la información del punto b para seleccionar los puntos de corte para cada categoría. 
 
+Como criterio de corte se utilizó como referencia a los cuartiles de la variable circ_tronco_cm.
+
 ## 4. Guardar el nuevo dataframe bajo el nombre de arbolado-mendoza-dataset-circ_tronco_cm-train.csv
+
+El nuevo dataframe se guardó en el archivo [arbolado-mendoza-dataset-circ_tronco_cm-train.csv](data/arbolado-mendoza-dataset-circ_tronco_cm-train.csv)
