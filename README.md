@@ -1,8 +1,11 @@
 # Desafío IA I 2023
 
+**Estudiante:** Del Longo, Micaela
+
 ## ia tu sabe 😉😘
 
-Link: https://docs.google.com/document/d/1BpjICpzWI0zChph9r5vi9_ldnphmD3h2uB4qLGwc0O4/edit#heading=h.5k87ni494szy
+- Link TP: https://docs.google.com/document/d/1BpjICpzWI0zChph9r5vi9_ldnphmD3h2uB4qLGwc0O4/edit#heading=h.5k87ni494szy
+- Link Kaggle: https://www.kaggle.com/competitions/arbolado-publico-mendoza-2023
 
 ## PARTE A
 Antes de realizar un primer envío se deben realizar las siguientes actividades:
@@ -69,6 +72,7 @@ lenguaje R (dplyr) el número de:
   modelo. (False Negatives)
   
     El resultado es una tabla que se conoce como matriz de confusión. 
+
 
 ### Ejercicio 5: Clasificador por clase Mayoritaria:
 

@@ -1,7 +1,8 @@
 # Ejercicio 2
 A partir del archivo arbolado-mendoza-dataset-train.csv responder las siguientes preguntas:
 
-## 1. ¿Cuál es la distribución de la clase inclinacion_peligrosa?
+## Ejercicio 2.1
+¿Cuál es la distribución de la clase inclinacion_peligrosa?
 
 La distribución de la clase inclinacion_peligrosa es la siguiente:
 
@@ -9,7 +10,8 @@ La distribución de la clase inclinacion_peligrosa es la siguiente:
     <img src="pics/2_1_distribucion_inclinacion_peligrosa.png"/>
 </div>
 
-## 2. ¿Se puede considerar alguna sección más peligrosa que otra?
+## Ejercicio 2.2
+¿Se puede considerar alguna sección más peligrosa que otra?
 
 <div style="text-align:center">
     <img src="pics/2_2_peligrosidad_secciones.png"/>
@@ -38,7 +40,8 @@ Considerando el gráfico anterior, las secciones más peligrosas son 3 y 2 en es
 
 Considerando el gráfico anterior, las secciones más peligrosas son "Parque O'Higgins" y "Barrio Cívico" en ese orden.
 
-## 3. ¿Se puede considerar alguna especie más peligrosa que otra?
+## Ejercicio 2.3
+¿Se puede considerar alguna especie más peligrosa que otra?
 
 <div style="text-align:center">
     <img src="pics/2_3_peligrosidad_especies.png"/>
@@ -50,7 +53,8 @@ Considerando el gráfico anterior, las especies más peligrosas son "Algarrobo",
 
 A partir del archivo arbolado-mendoza-dataset-train.csv:
 
-## 1. Generar un histograma de frecuencia para la variable circ_tronco_cm. Probar con diferentes números de bins.
+## Ejercicio 3.1
+Generar un histograma de frecuencia para la variable circ_tronco_cm. Probar con diferentes números de bins.
 
 <div style="text-align:center">
     <img src="pics/3_1_histograma_circ_tronco_bins_10.png"/>
@@ -72,7 +76,8 @@ A partir del archivo arbolado-mendoza-dataset-train.csv:
     <img src="pics/3_1_histograma_circ_tronco_bins_50.png"/>
 </div>
 
-## 2. Repetir el punto 1) pero separando por la clase de la variable inclinación_peligrosa.
+## Ejercicio 3.2
+Repetir el punto 1) pero separando por la clase de la variable inclinación_peligrosa.
 
 <div style="text-align:center">
     <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_10.png"/>
@@ -94,10 +99,12 @@ A partir del archivo arbolado-mendoza-dataset-train.csv:
     <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_50.png"/>
 </div>
 
-## 3. Crear una nueva variable categórica de nombre circ_tronco_cm_cat a partir circ_tronco_cm, en donde puedan asignarse solo 4 posibles valores \[muy alto, alto, medio, bajo]. Utilizar la información del punto b para seleccionar los puntos de corte para cada categoría. 
+## Ejercicio 3.3
+Crear una nueva variable categórica de nombre circ_tronco_cm_cat a partir circ_tronco_cm, en donde puedan asignarse solo 4 posibles valores \[muy alto, alto, medio, bajo]. Utilizar la información del punto b para seleccionar los puntos de corte para cada categoría. 
 
 Como criterio de corte se utilizó como referencia a los cuartiles de la variable circ_tronco_cm.
 
-## 4. Guardar el nuevo dataframe bajo el nombre de arbolado-mendoza-dataset-circ_tronco_cm-train.csv
+## Ejercicio 3.4
+Guardar el nuevo dataframe bajo el nombre de arbolado-mendoza-dataset-circ_tronco_cm-train.csv
 
 El nuevo dataframe se guardó en el archivo [arbolado-mendoza-dataset-circ_tronco_cm-train.csv](data/arbolado-mendoza-dataset-circ_tronco_cm-train.csv)
