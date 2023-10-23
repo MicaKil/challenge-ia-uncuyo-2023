@@ -8,14 +8,14 @@ A partir del archivo arbolado-mendoza-dataset-train.csv responder las siguientes
 
 La distribución de la clase inclinacion_peligrosa es la siguiente:
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/2_1_distribucion_inclinacion_peligrosa.png"/>
 </div>
 
 ## Ejercicio 2.2
 ¿Se puede considerar alguna sección más peligrosa que otra?
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/2_2_peligrosidad_secciones.png"/>
 </div>
 
@@ -36,7 +36,7 @@ Considerando el gráfico anterior, las secciones más peligrosas son 3 y 2 en es
 
 ### Separación de sección 4
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/2_2_peligrosidad_nombre_secciones.png"/>
 </div>
 
@@ -45,7 +45,7 @@ Considerando el gráfico anterior, las secciones más peligrosas son "Parque O'H
 ## Ejercicio 2.3
 ¿Se puede considerar alguna especie más peligrosa que otra?
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/2_3_peligrosidad_especies.png"/>
 </div>
 
@@ -58,46 +58,46 @@ A partir del archivo arbolado-mendoza-dataset-train.csv:
 ## Ejercicio 3.1
 Generar un histograma de frecuencia para la variable circ_tronco_cm. Probar con diferentes números de bins.
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/3_1_histograma_circ_tronco_bins_10.png"/>
 </div>
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/3_1_histograma_circ_tronco_bins_20.png"/>
 </div>
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/3_1_histograma_circ_tronco_bins_30.png"/>
 </div>
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/3_1_histograma_circ_tronco_bins_40.png"/>
 </div>
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/3_1_histograma_circ_tronco_bins_50.png"/>
 </div>
 
 ## Ejercicio 3.2
 Repetir el punto 1) pero separando por la clase de la variable inclinación_peligrosa.
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_10.png"/>
 </div>
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_20.png"/>
 </div>
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_30.png"/>
 </div>
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_40.png"/>
 </div>
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_50.png"/>
 </div>
 

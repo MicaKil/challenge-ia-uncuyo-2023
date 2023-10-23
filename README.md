@@ -91,7 +91,7 @@ modelo de clasificación.
 Utilizar la siguiente imagen como guía crear funciones para calcular: _Accuracy, Precision, Sensitivity, Specificity_ y 
 calcularlas para las matrices de confusión generadas en los puntos 4 y 5.
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/confusionMatrixUpdated.jpg"/>
 </div>
 
@@ -102,7 +102,7 @@ La técnica consiste en (previo realizar una mezcla aleatoria) separar el conjun
 denominadas folds). Luego en la primera iteración se utilizan k-1 partes para entrenar E1 y se utiliza la restante 
 para test. El proceso se repite por k iteraciones utilizando en cada una diferentes conjuntos de entrenamiento y test. 
 
-<div style="text-align:center">
+<div align="center">
     <img src="pics/Diagram-of-k-fold-cross-validation-with-k-10-Image-from-Karl-Rosaen-Log.ppm"/>
 </div>
 

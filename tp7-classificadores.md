@@ -3,7 +3,7 @@ Colocar un archivo con el nombre tp7-classificadores.md que contenga:
 2. La matriz de confusión para el clasificador por clase mayoritaria y las métricas correspondientes. (tabla)
 
 # Matriz de Confusión y Métricas
-<div style="text-align:center">
+<div align="center">
     <img src="pics/confusionMatrixUpdated.jpg"/>
 </div>
 
