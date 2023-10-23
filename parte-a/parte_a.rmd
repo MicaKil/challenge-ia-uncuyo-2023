@@ -15,21 +15,21 @@ arbolado-mendoza-dataset-train.csv
 ```{r}
 data <- read.csv("data/arbolado-mza-dataset.csv")
 
-row_number <- nrow(data)
+num_rows <- nrow(data)
 
 # define la proporción para dividir los datos (80% de entrenamiento, 20% de validación)
 training_proportion <- 0.8
 
 # calcula el número de filas para los datos de entrenamiento y validación
-training_number <- round(row_number * training_proportion)
-validation_number <- row_number - training_number
+training_number <- round(num_rows * training_proportion)
+validation_number <- num_rows - training_number
 
 # genera un conjunto de índices aleatorios sin reemplazo (por default replace=FALSE) para las filas de validación
-validation_indexes <- sample(1:row_number, validation_number)
+validation_indices <- sample(1:num_rows, validation_number)
 
 # divide los datos en conjuntos de entrenamiento y validación
-training_data <- data[-indices_validacion, ]  # el operador "-" indica que se excluyen los índices de validación
-validation_data <- data[indices_validacion, ]
+training_data <- data[-validation_indices, ]  # el operador "-" indica que se excluyen los índices de validación
+validation_data <- data[validation_indices, ]
 
 # write.csv(datos_entrenamiento, "arbolado-mendoza-dataset-train.csv", row.names = FALSE)
 # write.csv(datos_validacion, "arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
@@ -50,7 +50,6 @@ library(dplyr)
 library(ggplot2)
 
 data <- read.csv("data/arbolado-mendoza-dataset-train.csv")
-
 ```
 
 
@@ -64,7 +63,6 @@ ggplot(data, aes(x = factor(inclinacion_peligrosa), fill = factor(inclinacion_pe
     ggtitle("Distribucion de la Clase Inclinacion Peligrosa")
 
 # ggsave("pics/2_1_distribucion_inclinacion_peligrosa.png", plot = last_plot(), width = 6, height = 4)
-
 ```
 
 
@@ -133,8 +131,6 @@ A partir del archivo arbolado-mendoza-dataset-train.csv:
 Generar un histograma de frecuencia para la variable circ_tronco_cm. Probar con diferentes números de bins.
 
 ```{r}
-# Cargar la biblioteca necesaria
-library(ggplot2)
 trees <- read.csv("data/arbolado-mendoza-dataset-train.csv")
 ```
 
@@ -419,15 +415,12 @@ Repetir los puntos 4.c y 4.d pero aplicando la nueva función biggerclass_classi
 
 
 ```{r}
-# Cargar el archivo arbolado-mendoza-dataset-validation.csv como una data.frame y aplicarle la función
-# biggerclass_classifier.
 data <- read.csv("data/arbolado-mendoza-dataset-validation.csv")
 biggerclass_prediction <- biggerclass_classifier(data)
 saveRDS(biggerclass_prediction, "data-frames/biggerclass_prediction.rds")
 ```
 
 ```{r}
-# matriz de confusión
 biggerclass_prediction <- readRDS("data-frames/biggerclass_prediction.rds")
 biggerclass_confusion_matrix <- create_confusion_matrix(biggerclass_prediction)
 saveRDS(biggerclass_confusion_matrix, "data-frames/biggerclass_confusion_matrix.rds")
@@ -480,6 +473,7 @@ biggerclass_metrics <- calculate_metrics(biggerclass_confusion_matrix)
 saveRDS(biggerclass_metrics, "data-frames/biggerclass_metrics.rds")
 print(biggerclass_metrics)
 ```
+
 # Ejercicio 7: Validación Cruzada (Cross Validation) (k-folds)
 
 La validación cruzada es una técnica para estimar el error de generalización de un algoritmo/modelo de machine learning.
@@ -492,8 +486,42 @@ Crear una función de nombre create_folds() que reciba como parámetro un datafr
 una lista de R con la siguiente estructura: `list(Fold1=c(...), Fold2=c(..),... Fold10=c())`. Donde Fold1 va a contender
 los índices del dataframe que fueron seleccionados para el primer fold, y así con los demás.
 
+```{r}
+create_folds <- function (data, k) {
+  num_rows <- nrow(data)
+
+  # mezcla aleatoriamente los índices de las filas
+  set.seed(123)  # para hacer la mezcla reproducible
+  shuffled_indices <- sample(1:num_rows)
+
+  # tamaño de cada fold
+  fold_size <- floor(num_rows / num_folds)
+
+  # lista para almacenar los índices de los folds
+  folds_list <- list()
+
+  # crea los folds
+  for (i in 1:num_folds) {
+    # calcula los índices del fold actual
+    start_index <- (i - 1) * fold_size + 1
+    end_index <- min(i * fold_size, num_rows)
+    fold_indices <- shuffled_indices[start_index:end_index]
+
+    # almacena los índices
+    fold_name <- paste0("Fold", i)
+    folds_list[[fold_name]] <- fold_indices
+  }
+
+  return(folds_list)
+}
+```
+
 ## Ejercicio 7.2
 Crear una función de nombre cross_validation() que reciba como parámetro una data frame y un número de folds y entrene
 un modelo de árbol de decisión (utilizar paquete rpart) para cada uno de los posibles conjuntos de entrenamiento y
 calcule las métricas: _Accuracy, Precision, Sensitivity, Specificity_ para cada uno de los posibles conjuntos de tests.
 Devolver media y desviación estándar.
+
+```{r}
+
+```

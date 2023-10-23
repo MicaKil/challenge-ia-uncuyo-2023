@@ -1,0 +1,79 @@
+---
+title: "R Notebook"
+output: html_document
+---
+
+```{r}
+library(dplyr)
+library(readr)
+library(rpart)
+library(caret)
+library(randomForest)
+library(ggplot2)
+
+set.seed(2021)
+
+dataset_train <- read_csv("data/arbolado-memdoza-dataset.csv")
+dataset_test <- read.csv("data/arbolado-mendoza-test.csv")
+
+dataset_train$inclinacion_peligrosa <- as.factor(dataset_train$inclinacion_peligrosa)
+
+
+#Dropeamos variables innecesarias para el modelo
+
+drop <- names(dataset_train) %in% c("ultima_modificacion")
+dataset_train <- dataset_train[,!drop]
+drop <- names(dataset_train) %in% c("area_seccion")
+dataset_train <- dataset_train[,!drop]
+drop <- names(dataset_train) %in% c("seccion")
+dataset_train <- dataset_train[,!drop]
+drop <- names(dataset_train) %in% c("nombre_seccion")
+dataset_train <- dataset_train[,!drop]
+
+
+drop <- names(dataset_test) %in% c("ultima_modificacion")
+dataset_test <- dataset_test[,!drop]
+drop <- names(dataset_test) %in% c("area_seccion")
+dataset_test <- dataset_test[,!drop]
+drop <- names(dataset_test) %in% c("seccion")
+dataset_test <- dataset_test[,!drop]
+drop <- names(dataset_test) %in% c("nombre_seccion")
+dataset_test <- dataset_test[,!drop]
+
+#Crear nueva variable ratios
+total_por_especie <- dataset_train %>% group_by(especie) %>% summarise(total = n(), total_peligroso = sum(inclinacion_peligrosa == 1))
+ratios <- data.frame(especie = total_por_especie$especie, ratio = total_por_especie$total_peligroso/total_por_especie$total)
+
+#Merge ratios
+dataset_train <- merge(dataset_train, ratios, by = "especie")
+dataset_train <- dataset_train[order(dataset_train$id),]
+
+dataset_test <- merge(dataset_test, ratios, by = "especie")
+dataset_test[order(dataset_test$id),]
+
+#Separar en negativos y positivos ya que hay mucha mayor cantidad de negativos en el data_train
+positivos <- dataset_train %>% filter(inclinacion_peligrosa == 1)
+negativos <- dataset_train %>% filter(inclinacion_peligrosa == 0)
+
+# Igualar el numero de positivos y negativos
+negativospartition <- createDataPartition(negativos$especie,p=0.126 ,list=FALSE)
+negativos <- negativos[ negativospartition,]
+dataset_train <- rbind(negativos,positivos)
+
+
+
+rf <- randomForest(inclinacion_peligrosa ~ ratio + lat + long + diametro_tronco,
+                   data = dataset_train,
+                   ntree = 600)
+
+inclinacion_peligrosa <- predict(rf, newdata = dataset_test)
+
+
+rf
+
+inclinacion_peligrosa <- as.numeric(as.character(inclinacion_peligrosa))
+resultados <- data.frame(id = dataset_test$id,inclinacion_peligrosa)
+
+
+write.csv(resultados, "envio.csv")
+```
