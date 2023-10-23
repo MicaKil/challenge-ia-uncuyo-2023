@@ -74,7 +74,7 @@ lenguaje R (dplyr) el número de:
     El resultado es una tabla que se conoce como matriz de confusión. 
 
 
-### Ejercicio 5: Clasificador por clase Mayoritaria:
+### Ejercicio 5: Clasificador por clase Mayoritaria
 
 1. Implementar una función de nombre biggerclass_classifier, que reciba como parámetro el dataframe generado con 
 anterioridad y genere una nueva columna de nombre prediction_class en donde se asigne siempre de la clase mayoritaria 
@@ -91,12 +91,20 @@ modelo de clasificación.
 Utilizar la siguiente imagen como guía crear funciones para calcular: _Accuracy, Precision, Sensitivity, Specificity_ y 
 calcularlas para las matrices de confusión generadas en los puntos 4 y 5.
 
+<div style="text-align:center">
+    <img src="pics/confusionMatrixUpdated.jpg"/>
+</div>
+
 ### Ejercicio 7: Validación Cruzada (Cross Validation) (k-folds)
 
 La validación cruzada es una técnica para estimar el error de generalización de un algoritmo/modelo de machine learning.
 La técnica consiste en (previo realizar una mezcla aleatoria) separar el conjunto de datos en k partes (normalmente 
 denominadas folds). Luego en la primera iteración se utilizan k-1 partes para entrenar E1 y se utiliza la restante 
 para test. El proceso se repite por k iteraciones utilizando en cada una diferentes conjuntos de entrenamiento y test. 
+
+<div style="text-align:center">
+    <img src="pics/Diagram-of-k-fold-cross-validation-with-k-10-Image-from-Karl-Rosaen-Log.ppm"/>
+</div>
 
 1. Crear una función de nombre create_folds() que reciba como parámetro un dataframe y la cantidad de folds y devuelva 
 una lista de R con la siguiente estructura: `list(Fold1=c(...), Fold2=c(..),... Fold10=c())`. Donde Fold1 va a contender 

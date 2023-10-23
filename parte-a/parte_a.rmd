@@ -338,8 +338,41 @@ modelo. (False Negatives)
 El resultado es una tabla que se conoce como matriz de confusión.
 
 ```{r}
-create_confusion_matrix <- function (data){
-# calcula la matriz de confusión
+create_confusion_matrix <- function(data) {
+    library(dplyr)
+    TP <- data %>%
+        filter(prediction_class == 1 & inclinacion_peligrosa == 1) %>%
+        nrow()
+
+    # True Negatives (TN)
+    TN <- data %>%
+        filter(prediction_class == 0 & inclinacion_peligrosa == 0) %>%
+        nrow()
+
+    # False Positives (FP)
+    FP <- data %>%
+        filter(prediction_class == 1 & inclinacion_peligrosa == 0) %>%
+        nrow()
+
+    # False Negatives (FN)
+    FN <- data %>%
+        filter(prediction_class == 0 & inclinacion_peligrosa == 1) %>%
+        nrow()
+
+    confusion_matrix <- data.frame(
+        True_Positive = TP,
+        True_Negative = TN,
+        False_Positive = FP,
+        False_Negative = FN
+    )
+
+    return(confusion_matrix)
+}
+```
+
+```{r}
+create_confusion_matrix_tidyr <- function (data){
+    library(tidyr)
     confusion_matrix <- data %>%
         group_by(inclinacion_peligrosa, prediction_class) %>%
         summarize(count = n()) %>%
@@ -352,8 +385,8 @@ create_confusion_matrix <- function (data){
 
 ```{r}
 random_prediction <- readRDS("data-frames/random_prediction.rds")
-confusion_matrix <- create_confusion_matrix(random_prediction)
-print(confusion_matrix)
+random_confusion_matrix <- create_confusion_matrix(random_prediction)
+saveRDS(random_confusion_matrix, "data-frames/random_confusion_matrix.rds")
 ```
 
 # Ejercicio 5: Clasificador por clase Mayoritaria:
@@ -380,6 +413,7 @@ biggerclass_classifier <- function(data) {
     return(data)
 }
 ```
+
 ## Ejercicio 5.2
 Repetir los puntos 4.c y 4.d pero aplicando la nueva función biggerclass_classifier
 
@@ -390,11 +424,15 @@ Repetir los puntos 4.c y 4.d pero aplicando la nueva función biggerclass_classi
 data <- read.csv("data/arbolado-mendoza-dataset-validation.csv")
 biggerclass_prediction <- biggerclass_classifier(data)
 saveRDS(biggerclass_prediction, "data-frames/biggerclass_prediction.rds")
-print(biggerclass_prediction)
 ```
 
 ```{r}
+# matriz de confusión
+biggerclass_prediction <- readRDS("data-frames/biggerclass_prediction.rds")
+biggerclass_confusion_matrix <- create_confusion_matrix(biggerclass_prediction)
+saveRDS(biggerclass_confusion_matrix, "data-frames/biggerclass_confusion_matrix.rds")
 ```
+
 # Ejercicio 6
 
 A partir de una matriz de confusión es posible calcular distintas métricas que nos permiten determinar la calidad del
@@ -403,6 +441,45 @@ modelo de clasificación.
 Utilizar la siguiente imagen como guía crear funciones para calcular: _Accuracy, Precision, Sensitivity, Specificity_ y
 calcularlas para las matrices de confusión generadas en los puntos 4 y 5.
 
+```{r}
+calculate_metrics <- function(confusion_matrix){
+    # alias para confusion matrix
+    TP <- confusion_matrix$True_Positive
+    TN <- confusion_matrix$True_Negative
+    FP <- confusion_matrix$False_Positive
+    FN <- confusion_matrix$False_Negative
+
+    sensitivity <- TP / (TP + FN)
+    specificity <- TN / (TN + FP)
+    precision <- TP / (TP + FP)
+    negative_predictive_value <- TN / (TN + FN)
+    accuracy <- (TP + TN) / (TP + TN + FP + FN)
+
+    metrics <- data.frame(
+        Sensitivity = sensitivity,
+        Specificity = specificity,
+        Precision = precision,
+        Negative_Predictive_Value = negative_predictive_value,
+        Accuracy = accuracy
+    )
+
+    return(metrics)
+}
+```
+
+```{r}
+random_confusion_matrix <- readRDS("data-frames/random_confusion_matrix.rds")
+random_metrics <- calculate_metrics(random_confusion_matrix)
+saveRDS(random_metrics, "data-frames/random_metrics.rds")
+print(random_metrics)
+```
+
+```{r}
+biggerclass_confusion_matrix <- readRDS("data-frames/biggerclass_confusion_matrix.rds")
+biggerclass_metrics <- calculate_metrics(biggerclass_confusion_matrix)
+saveRDS(biggerclass_metrics, "data-frames/biggerclass_metrics.rds")
+print(biggerclass_metrics)
+```
 # Ejercicio 7: Validación Cruzada (Cross Validation) (k-folds)
 
 La validación cruzada es una técnica para estimar el error de generalización de un algoritmo/modelo de machine learning.

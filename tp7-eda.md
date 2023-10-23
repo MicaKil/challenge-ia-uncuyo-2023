@@ -1,3 +1,5 @@
+**Estudiante:** Del Longo, Micaela (11653)
+
 # Ejercicio 2
 A partir del archivo arbolado-mendoza-dataset-train.csv responder las siguientes preguntas:
 
