@@ -1,6 +1,7 @@
 # Desafío IA I 2023
 
 **Estudiante:** Del Longo, Micaela
+**Legajo:** 11653
 
 ## ia tu sabe 😉😘
 

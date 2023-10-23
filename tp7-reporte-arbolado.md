@@ -1,3 +1,5 @@
+**Estudiante:** Del Longo, Micaela (11653)
+
 # PARTE B
 
 Proponer una estrategia para predecir la peligrosidad del arbolado público de Mendoza con un resultado superior al 0.69 

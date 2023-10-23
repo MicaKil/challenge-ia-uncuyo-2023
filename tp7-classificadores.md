@@ -1,8 +1,7 @@
-Colocar un archivo con el nombre tp7-classificadores.md que contenga:
-1. La matriz de confusión para el clasificador aleatorio y las métricas correspondientes. (tabla)
-2. La matriz de confusión para el clasificador por clase mayoritaria y las métricas correspondientes. (tabla)
+**Estudiante:** Del Longo, Micaela (11653)
 
 # Matriz de Confusión y Métricas
+
 <div align="center">
     <img src="pics/confusionMatrixUpdated.jpg"/>
 </div>
@@ -22,4 +21,3 @@ Colocar un archivo con el nombre tp7-classificadores.md que contenga:
 | **Actual Positive** | 0                   | 695.0                        | **Sensitivity** =  0.00 |
 | **Actual Negative** | 0                   | 5687                         | **Specificity** =  1.00 |
 |                     | **Precision** =  NA | **Neg. Pred. Value** =  0.89 | **Accuracy** =  0.89    |
-

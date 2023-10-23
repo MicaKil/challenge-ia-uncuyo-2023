@@ -4,6 +4,16 @@ output: html_document
 author: "Micaela Del Longo @MicaKil"
 ---
 
+# Librerías
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(tidyr)
+library(rpart)
+library(caret)
+```
+
 Antes de realizar un primer envío se deben realizar las siguientes actividades:
 
 # Ejercicio 1
@@ -46,9 +56,6 @@ A partir del archivo arbolado-mendoza-dataset-train.csv responder las siguientes
 respuesta.
 
 ```{r}
-library(dplyr)
-library(ggplot2)
-
 data <- read.csv("data/arbolado-mendoza-dataset-train.csv")
 ```
 
@@ -335,7 +342,6 @@ El resultado es una tabla que se conoce como matriz de confusión.
 
 ```{r}
 create_confusion_matrix <- function(data) {
-    library(dplyr)
     TP <- data %>%
         filter(prediction_class == 1 & inclinacion_peligrosa == 1) %>%
         nrow()
@@ -368,7 +374,6 @@ create_confusion_matrix <- function(data) {
 
 ```{r}
 create_confusion_matrix_tidyr <- function (data){
-    library(tidyr)
     confusion_matrix <- data %>%
         group_by(inclinacion_peligrosa, prediction_class) %>%
         summarize(count = n()) %>%
@@ -482,12 +487,13 @@ denominadas folds). Luego en la primera iteración se utilizan k-1 partes para e
 para test. El proceso se repite por k iteraciones utilizando en cada una diferentes conjuntos de entrenamiento y test.
 
 ## Ejercicio 7.1
+
 Crear una función de nombre create_folds() que reciba como parámetro un dataframe y la cantidad de folds y devuelva
 una lista de R con la siguiente estructura: `list(Fold1=c(...), Fold2=c(..),... Fold10=c())`. Donde Fold1 va a contender
 los índices del dataframe que fueron seleccionados para el primer fold, y así con los demás.
 
 ```{r}
-create_folds <- function (data, k) {
+create_folds <- function (data, num_folds) {
   num_rows <- nrow(data)
 
   # mezcla aleatoriamente los índices de las filas
@@ -523,5 +529,74 @@ calcule las métricas: _Accuracy, Precision, Sensitivity, Specificity_ para cada
 Devolver media y desviación estándar.
 
 ```{r}
+# library(rpart)
+# train_formula<-formula(inclinacion_peligrosa~altura+
+#     Circ_tronco_cm+
+#     Lat+long+
+#     Seccion+
+#     especie)
+# generamos el modelo
+# tree_model<-rpart(train_formula,data=data_train)
+# obtenemos la predicción
+# p<-predict(tree_model,data_val,type='class')
+```
 
+```{r}
+cross_validation <- function(data, num_folds) {
+    folds <- create_folds(data, num_folds)
+
+    # almacenar las métricas
+    accuracy_vector <- NULL
+    precision_vector <- NULL
+    sensitivity_vector <- NULL
+    specificity_vector <- NULL
+
+    for (i in 1:num_folds) {
+        train_indices <- setdiff(seq_len(nrow(data)), folds[[i]])
+        train_data <- data[train_indices, ]
+        test_data <- data[folds[[i]], ]
+
+        train_data$inclinacion_peligrosa <- factor(train_data$inclinacion_peligrosa)
+
+        train_data$especie <- factor(train_data$especie, levels = levels(data$especie))
+        test_data$especie <- factor(test_data$especie, levels = levels(data$especie))
+
+        train_formula <- formula(inclinacion_peligrosa ~ altura + circ_tronco_cm + lat + long + seccion + especie)
+        model <- rpart(train_formula, data = train_data)
+        predictions <- predict(model, test_data, type = "class")
+
+        # cálculo de métricas
+        confusion_matrix <- confusionMatrix(predictions, as.factor(test_data$inclinacion_peligrosa))
+        accuracy_vector <- c(accuracy_vector, confusion_matrix$overall["Accuracy"])
+        precision_vector <- c(precision_vector, confusion_matrix$byClass["Pos_Prediction"])
+        sensitivity_vector <- c(sensitivity_vector, confusion_matrix$byClass["Sensitivity"])
+        specificity_vector <- c(specificity_vector, confusion_matrix$byClass["Specificity"])
+    }
+
+    # media y desviación estándar
+    metrics_mean <- c(
+    Accuracy = mean(accuracy_vector),
+    Precision = mean(precision_vector),
+    Sensitivity = mean(sensitivity_vector),
+    Specificity = mean(specificity_vector)
+    )
+
+    metrics_sd <- c(
+        Accuracy = sd(accuracy_vector),
+        Precision = sd(precision_vector),
+        Sensitivity = sd(sensitivity_vector),
+        Specificity = sd(specificity_vector)
+    )
+
+    return(list(Mean = metrics_mean, SD = metrics_sd))
+}
+```
+
+
+```{r}
+data_train <- read.csv("data/arbolado-mendoza-dataset-train.csv")
+data_train$ultima_modificacion <- NULL
+data_train$area_seccion <- NULL
+metrics <- cross_validation(data_train, 10)
+metrics
 ```
