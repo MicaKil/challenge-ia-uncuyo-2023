@@ -21,23 +21,23 @@ dataset_train$inclinacion_peligrosa <- as.factor(dataset_train$inclinacion_pelig
 
 #Dropeamos variables innecesarias para el modelo
 
-drop <- names(dataset_train) %in% c("ultima_modificacion")
+drop <- names(dataset_train) %in% "ultima_modificacion"
 dataset_train <- dataset_train[,!drop]
-drop <- names(dataset_train) %in% c("area_seccion")
+drop <- names(dataset_train) %in% "area_seccion"
 dataset_train <- dataset_train[,!drop]
-drop <- names(dataset_train) %in% c("seccion")
+drop <- names(dataset_train) %in% "seccion"
 dataset_train <- dataset_train[,!drop]
-drop <- names(dataset_train) %in% c("nombre_seccion")
+drop <- names(dataset_train) %in% "nombre_seccion"
 dataset_train <- dataset_train[,!drop]
 
 
-drop <- names(dataset_test) %in% c("ultima_modificacion")
+drop <- names(dataset_test) %in% "ultima_modificacion"
 dataset_test <- dataset_test[,!drop]
-drop <- names(dataset_test) %in% c("area_seccion")
+drop <- names(dataset_test) %in% "area_seccion"
 dataset_test <- dataset_test[,!drop]
-drop <- names(dataset_test) %in% c("seccion")
+drop <- names(dataset_test) %in% "seccion"
 dataset_test <- dataset_test[,!drop]
-drop <- names(dataset_test) %in% c("nombre_seccion")
+drop <- names(dataset_test) %in% "nombre_seccion"
 dataset_test <- dataset_test[,!drop]
 
 #Crear nueva variable ratios
@@ -76,4 +76,27 @@ resultados <- data.frame(id = dataset_test$id,inclinacion_peligrosa)
 
 
 write.csv(resultados, "envio.csv")
+
+# 1-) Se eliminaron las variables: “ultima_modificación”, “area_sección”, “seccion” y “nombre_seccion” de los sets.
+#
+# 2-) Se creó la variable “ratio” corresponde a el ratio de árboles con inclinación peligrosa por especie de árbol.
+#
+# 3-) No se normalizaron variables ya existentes, pero la variable creada ratio está normalizada ya que solo toma valores entre 0 y 1.
+#
+# B-) No se utilizó set de validación.
+#
+# C-) La puntuación obtenida en Kaggle fue de 0.71628
+#
+# D-) Se utilizo el algoritmo de Random Forest con 600 árboles de decisión para predecir la variable “inclinacion_peligrosa” utilizando como referencia los valores de las siguientes variables:
+#
+# Ratio: nos dice que tan propenso es a tener una inclinación peligrosa según su especie.
+#
+# Lat y Long: ya que si un árbol esta en condiciones de inclinación peligrosa, es probable que arboles cercanos estén en las mismas condiciones.
+#
+# Diámetro_tronco: para tener una medida de las dimensiones del árbol.
+#
+# Para el set de entrenamiento, se tomó el archivo de entrenamiento del desafío,
+# se dividió en los árboles que tienen inclinación peligrosa y los que no,
+# luego se tomó una partición de los que no tienen inclinación peligrosa que mantuviera una distribución de especies igual al set original de no peligrosos y que tuviera la misma cantidad de elementos que los arboles peligrosos,
+# para que así se asemeje mas al set que se usa de test que tiene una distribución del 50/50.
 ```

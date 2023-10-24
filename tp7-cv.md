@@ -8,31 +8,31 @@ los índices del dataframe que fueron seleccionados para el primer fold, y así 
 
 ```R
 create_folds <- function (data, num_folds) {
-  num_rows <- nrow(data)
+    num_rows <- nrow(data)
 
-  # mezcla aleatoriamente los índices de las filas
-  set.seed(123)  # para hacer la mezcla reproducible
-  shuffled_indices <- sample(1:num_rows)
+    # mezcla aleatoriamente los índices de las filas
+    set.seed(2023)  # para hacer la mezcla reproducible
+    shuffled_indices <- sample(1:num_rows)
 
-  # tamaño de cada fold
-  fold_size <- floor(num_rows / num_folds)
+    # tamaño de cada fold
+    fold_size <- floor(num_rows / num_folds)
 
-  # lista para almacenar los índices de los folds
-  folds_list <- list()
+    # lista para almacenar los índices de los folds
+    folds_list <- list()
 
-  # crea los folds
-  for (i in 1:num_folds) {
-    # calcula los índices del fold actual
-    start_index <- (i - 1) * fold_size + 1
-    end_index <- min(i * fold_size, num_rows)
-    fold_indices <- shuffled_indices[start_index:end_index]
+    # crea los folds
+    for (i in 1:num_folds) {
+        # calcula los índices del fold actual
+        start_index <- (i - 1) * fold_size + 1
+        end_index <- min(i * fold_size, num_rows)
+        fold_indices <- shuffled_indices[start_index:end_index]
 
-    # almacena los índices
-    fold_name <- paste0("Fold", i)
-    folds_list[[fold_name]] <- fold_indices
-  }
+        # almacena los índices
+        fold_name <- paste0("Fold", i)
+        folds_list[[fold_name]] <- fold_indices
+    }
 
-  return(folds_list)
+    return(folds_list)
 }
 ```
 
@@ -44,6 +44,7 @@ Devolver media y desviación estándar.
 ```R
 cross_validation <- function(data, num_folds) {
     folds <- create_folds(data, num_folds)
+    data$especie <- factor(data$especie)
 
     # almacenar las métricas
     accuracy_vector <- NULL
@@ -64,11 +65,11 @@ cross_validation <- function(data, num_folds) {
         train_formula <- formula(inclinacion_peligrosa ~ altura + circ_tronco_cm + lat + long + seccion + especie)
         model <- rpart(train_formula, data = train_data)
         predictions <- predict(model, test_data, type = "class")
-	  
+
         # cálculo de métricas
         confusion_matrix <- confusionMatrix(predictions, as.factor(test_data$inclinacion_peligrosa))
         accuracy_vector <- c(accuracy_vector, confusion_matrix$overall["Accuracy"])
-        precision_vector <- c(precision_vector, confusion_matrix$byClass["Pos_Prediction"])
+        precision_vector <- c(precision_vector, confusion_matrix$byClass["Precision"])
         sensitivity_vector <- c(sensitivity_vector, confusion_matrix$byClass["Sensitivity"])
         specificity_vector <- c(specificity_vector, confusion_matrix$byClass["Specificity"])
     }
@@ -108,15 +109,10 @@ Obtuve los siguientes resultados:
 ## Media
 | Accuracy  | Precision | Sensitivity | Specificity |
 |-----------|-----------|-------------|-------------|
-| 0.8870349 | NA        | 1.0000000   | 0.0000000   |
+| 0.6805068 | 0.6410556 | 0.6421861   | 0.7138173   |
 
 ## Desviación Estándar
 
-| Accuracy   | Precision | Sensitivity | Specificity |
-|------------|-----------|-------------|-------------|
-| 0.00503041 | NA        | 0.00000000  | 0.00000000  |
-
-## Análisis
-
-Como siempre como predicción obtuve '0', no peligroso, entonces obtuve los mismos resultados que los de el 'Clasificador 
-por Clase Mayoritaria'. 
+| Accuracy   | Precision  | Sensitivity | Specificity |
+|------------|------------|-------------|-------------|
+| 0.01568767 | 0.04363744 | 0.05189349  | 0.04730258  |

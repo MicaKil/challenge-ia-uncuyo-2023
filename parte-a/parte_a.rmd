@@ -12,8 +12,8 @@ library(ggplot2)
 library(tidyr)
 library(rpart)
 library(caret)
+library(forcats)
 ```
-
 Antes de realizar un primer envío se deben realizar las siguientes actividades:
 
 # Ejercicio 1
@@ -24,25 +24,37 @@ arbolado-mendoza-dataset-train.csv
 
 ```{r}
 data <- read.csv("data/arbolado-mza-dataset.csv")
+data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
 
-num_rows <- nrow(data)
+data_inclinacion_peligrosa_0 <- data %>% filter(inclinacion_peligrosa == 0)
+data_inclinacion_peligrosa_1 <- data %>% filter(inclinacion_peligrosa == 1)
 
-# define la proporción para dividir los datos (80% de entrenamiento, 20% de validación)
-training_proportion <- 0.8
+# undersampling
+set.seed(2023)
+indeces_inclinacion_peligrosa_0 <- caret::createDataPartition(data_inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.1, list = FALSE)
+undersampled_data <- data_inclinacion_peligrosa_0[indeces_inclinacion_peligrosa_0, ]
 
-# calcula el número de filas para los datos de entrenamiento y validación
-training_number <- round(num_rows * training_proportion)
-validation_number <- num_rows - training_number
+# merge
+balanced_data <- rbind(data_inclinacion_peligrosa_1, undersampled_data)  # bind rows
+balanced_data <- balanced_data[order(balanced_data$id), ]  # ordena por id
 
-# genera un conjunto de índices aleatorios sin reemplazo (por default replace=FALSE) para las filas de validación
-validation_indices <- sample(1:num_rows, validation_number)
+# split by 80/20
 
-# divide los datos en conjuntos de entrenamiento y validación
-training_data <- data[-validation_indices, ]  # el operador "-" indica que se excluyen los índices de validación
-validation_data <- data[validation_indices, ]
+set.seed(2023)
+indeces_train <- caret::createDataPartition(balanced_data$inclinacion_peligrosa, p = 0.8, list = FALSE)
+train_data <- balanced_data[indeces_train, ]
+validation_data <- balanced_data[-indeces_train, ]
 
-# write.csv(datos_entrenamiento, "arbolado-mendoza-dataset-train.csv", row.names = FALSE)
-# write.csv(datos_validacion, "arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
+train_1 <- train_data %>% filter(inclinacion_peligrosa == 1) %>% nrow()
+rows_train <- nrow(train_data)
+percent_train <- train_1 / rows_train * 100
+validation_1 <- validation_data %>% filter(inclinacion_peligrosa == 1) %>% nrow()
+rows_validation <- nrow(validation_data)
+percent_validation <- validation_1 / rows_validation * 100
+
+# guardar
+write.csv(train_data, "data/arbolado-mendoza-dataset-train.csv", row.names = FALSE)
+write.csv(validation_data, "data/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
 ```
 
 # Ejercicio 2
@@ -56,20 +68,20 @@ A partir del archivo arbolado-mendoza-dataset-train.csv responder las siguientes
 respuesta.
 
 ```{r}
-data <- read.csv("data/arbolado-mendoza-dataset-train.csv")
+train_data <- read.csv("data/arbolado-mendoza-dataset-train.csv")
 ```
 
 
 ## Pregunta 1: ¿Cuál es la distribución de la clase inclinacion_peligrosa?
 
 ```{r}
-ggplot(data, aes(x = factor(inclinacion_peligrosa), fill = factor(inclinacion_peligrosa))) +
+ggplot(train_data, aes(x = factor(inclinacion_peligrosa), fill = factor(inclinacion_peligrosa))) +
     geom_bar() +
     scale_fill_manual(values = c("blue", "red")) + # asigna colores a las barras
     labs(x = "Inclinacion Peligrosa", y = "Frecuencia") +
     ggtitle("Distribucion de la Clase Inclinacion Peligrosa")
 
-# ggsave("pics/2_1_distribucion_inclinacion_peligrosa.png", plot = last_plot(), width = 6, height = 4)
+ggsave("pics_balanced/2_1_distribucion_inclinacion_peligrosa.png", plot = last_plot(), width = 6, height = 4)
 ```
 
 
@@ -77,12 +89,12 @@ ggplot(data, aes(x = factor(inclinacion_peligrosa), fill = factor(inclinacion_pe
 
 ```{r}
 # crea un nuevo conjunto de datos "secciones_peligrosas" con resumen de peligrosidad por sección
-secciones_peligrosas <- data %>%
-    group_by(seccion) %>%  # agrupar por sección
+secciones_peligrosas <- train_data %>%
+    dplyr::group_by(seccion) %>%  # agrupar por sección
     # resumen de peligrosidad por sección -> total_count = n() calcula el número total de filas en cada grupo
-    summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
+    dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
     # mutate agrega una nueva columna peligrosidad la cual se calcula dividiendo peligrosa_count entre total_count
-    mutate(peligrosidad = peligrosa_count / total_count)
+    dplyr::mutate(peligrosidad = peligrosa_count / total_count)
 
 ggplot(secciones_peligrosas, aes(x = factor(seccion), y = peligrosidad, fill = factor(seccion))) +
     geom_bar(stat = "identity") +  # representa las alturas de las barras tal como se proporcionan en los datos
@@ -90,14 +102,14 @@ ggplot(secciones_peligrosas, aes(x = factor(seccion), y = peligrosidad, fill = f
     labs(x = "Seccion Administrativa", y = "Proporcion de Inclinacion Peligrosa") +
     ggtitle("Peligrosidad por Seccion Administrativa")
 
-#ggsave("pics/2_2_peligrosidad_secciones.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/2_2_peligrosidad_secciones.png", plot = last_plot(), width = 8, height = 6)
 
-nombre_secciones_peligrosas <- data %>%
-    group_by(nombre_seccion) %>%
+nombre_secciones_peligrosas <- train_data %>%
+    dplyr::group_by(nombre_seccion) %>%
     # resumen de peligrosidad por sección -> total_count = n() calcula el número total de filas en cada grupo
-    summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
+    dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
     # mutate agrega una nueva columna peligrosidad la cual se calcula dividiendo peligrosa_count entre total_count
-    mutate(peligrosidad = peligrosa_count / total_count)
+    dplyr::mutate(peligrosidad = peligrosa_count / total_count)
 
 ggplot(nombre_secciones_peligrosas, aes(x = factor(nombre_seccion), y = peligrosidad, fill = factor(nombre_seccion))) +
     geom_bar(stat = "identity") +  # representa las alturas de las barras tal como se proporcionan en los datos
@@ -106,7 +118,7 @@ ggplot(nombre_secciones_peligrosas, aes(x = factor(nombre_seccion), y = peligros
     ggtitle("Peligrosidad por Seccion Administrativa (Nombre)") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-#ggsave("pics/2_2_peligrosidad_nombre_secciones.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/2_2_peligrosidad_nombre_secciones.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 
@@ -114,10 +126,10 @@ ggplot(nombre_secciones_peligrosas, aes(x = factor(nombre_seccion), y = peligros
 
 ```{r}
 # crea un nuevo conjunto de datos "especies_peligrosas" con resumen de peligrosidad por especie
-especies_peligrosas <- data %>%
-    group_by(especie) %>%  # agrupa por especie
-    summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
-    mutate(peligrosidad = peligrosa_count / total_count)
+especies_peligrosas <- train_data %>%
+    dplyr::group_by(especie) %>%  # agrupa por especie
+    dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
+    dplyr::mutate(peligrosidad = peligrosa_count / total_count)
 
 ggplot(especies_peligrosas, aes(x = reorder(especie, -peligrosidad), y = peligrosidad, fill = reorder(especie, -peligrosidad))) +
     geom_bar(stat = "identity") +
@@ -126,7 +138,7 @@ ggplot(especies_peligrosas, aes(x = reorder(especie, -peligrosidad), y = peligro
     ggtitle("Peligrosidad por Especie de Arbol") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-#ggsave("pics/2_3_peligrosidad_especies.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/2_3_peligrosidad_especies.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 
@@ -138,57 +150,53 @@ A partir del archivo arbolado-mendoza-dataset-train.csv:
 Generar un histograma de frecuencia para la variable circ_tronco_cm. Probar con diferentes números de bins.
 
 ```{r}
-trees <- read.csv("data/arbolado-mendoza-dataset-train.csv")
-```
-
-```{r}
-ggplot(trees, aes(x = circ_tronco_cm)) +
+ggplot(train_data, aes(x = circ_tronco_cm)) +
     geom_histogram(bins = 10, aes(fill = after_stat(count))) +
     scale_fill_gradient(low = "blue", high = "red") +
     labs(title = "Histograma de Circunferencia del Tronco (Bins = 10)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
-    scale_x_continuous(breaks = seq(0, max(trees$circ_tronco_cm), by = 25))
+    scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-# ggsave("pics/3_1_histograma_circ_tronco_bins_10.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/3_1_histograma_circ_tronco_bins_10.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
-ggplot(trees, aes(x = circ_tronco_cm)) +
+ggplot(train_data, aes(x = circ_tronco_cm)) +
     geom_histogram(bins = 20, aes(fill = after_stat(count))) +
     scale_fill_gradient(low = "blue", high = "red") +
     labs(title = "Histograma de Circunferencia del Tronco (Bins = 20)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
-    scale_x_continuous(breaks = seq(0, max(trees$circ_tronco_cm), by = 25))
+    scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-# ggsave("pics/3_1_histograma_circ_tronco_bins_20.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/3_1_histograma_circ_tronco_bins_20.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
-ggplot(trees, aes(x = circ_tronco_cm)) +
+ggplot(train_data, aes(x = circ_tronco_cm)) +
     geom_histogram(bins = 30, aes(fill = after_stat(count))) +
     scale_fill_gradient(low = "blue", high = "red") +
     labs(title = "Histograma de Circunferencia del Tronco (Bins = 30)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
-    scale_x_continuous(breaks = seq(0, max(trees$circ_tronco_cm), by = 25))
+    scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-# ggsave("pics/3_1_histograma_circ_tronco_bins_30.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/3_1_histograma_circ_tronco_bins_30.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
-ggplot(trees, aes(x = circ_tronco_cm)) +
+ggplot(train_data, aes(x = circ_tronco_cm)) +
     geom_histogram(bins = 40, aes(fill = after_stat(count))) +
     scale_fill_gradient(low = "blue", high = "red") +
     labs(title = "Histograma de Circunferencia del Tronco (Bins = 40)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
-    scale_x_continuous(breaks = seq(0, max(trees$circ_tronco_cm), by = 25))
+    scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-# ggsave("pics/3_1_histograma_circ_tronco_bins_40.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/3_1_histograma_circ_tronco_bins_40.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
-ggplot(trees, aes(x = circ_tronco_cm)) +
+ggplot(train_data, aes(x = circ_tronco_cm)) +
     geom_histogram(bins = 50, aes(fill = after_stat(count))) +
     scale_fill_gradient(low = "blue", high = "red") +
     labs(title = "Histograma de Circunferencia del Tronco (Bins = 50)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
-    scale_x_continuous(breaks = seq(0, max(trees$circ_tronco_cm), by = 25))
+    scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-# ggsave("pics/3_1_histograma_circ_tronco_bins_50.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/3_1_histograma_circ_tronco_bins_50.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 
@@ -196,53 +204,53 @@ ggplot(trees, aes(x = circ_tronco_cm)) +
 Repetir el punto 1) pero separando por la clase de la variable inclinación_peligrosa.
 
 ```{r}
-ggplot(trees, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
+ggplot(train_data, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
     geom_histogram(bins = 10) +
     labs(title = "Histograma de Circunferencia del Tronco por Clase de Inclinacion (Bins = 10)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
     scale_fill_discrete(name = "Inclinacion") +
-    scale_x_continuous(breaks = seq(0, max(trees$circ_tronco_cm), by = 25))
+    scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-# ggsave("../pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_10.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_10.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
-ggplot(trees, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
+ggplot(train_data, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
     geom_histogram(bins = 20) +
     labs(title = "Histograma de Circunferencia del Tronco por Clase de Inclinacion (Bins = 20)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
     scale_fill_discrete(name = "Inclinacion") +
-    scale_x_continuous(breaks = seq(0, max(trees$circ_tronco_cm), by = 25))
+    scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-# ggsave("../pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_20.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_20.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
-ggplot(trees, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
+ggplot(train_data, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
     geom_histogram(bins = 30) +
     labs(title = "Histograma de Circunferencia del Tronco por Clase de Inclinacion (Bins = 30)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
     scale_fill_discrete(name = "Inclinacion") +
-    scale_x_continuous(breaks = seq(0, max(trees$circ_tronco_cm), by = 25))
+    scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-# ggsave("../pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_30.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_30.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
-ggplot(trees, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
+ggplot(train_data, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
     geom_histogram(bins = 40) +
     labs(title = "Histograma de Circunferencia del Tronco por Clase de Inclinacion (Bins = 40)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
     scale_fill_discrete(name = "Inclinacion") +
-    scale_x_continuous(breaks = seq(0, max(trees$circ_tronco_cm), by = 25))
+    scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-# ggsave("../pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_40.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_40.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
-ggplot(trees, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
+ggplot(train_data, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))) +
     geom_histogram(bins = 50) +
     labs(title = "Histograma de Circunferencia del Tronco por Clase de Inclinacion (Bins = 50)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
     scale_fill_discrete(name = "Inclinacion") +
-    scale_x_continuous(breaks = seq(0, max(trees$circ_tronco_cm), by = 25))
+    scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-# ggsave("../pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_50.png", plot = last_plot(), width = 8, height = 6)
+ggsave("pics_balanced/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_50.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 
@@ -252,19 +260,19 @@ solo 4 posibles valores \[muy alto, alto, medio, bajo]. Utilizar la información
 de corte para cada categoría.
 
 ```{r}
-trees <- read.csv("data/arbolado-mendoza-dataset-train.csv")
+train_data <- read.csv("data/arbolado-mendoza-dataset-train.csv")
 
 # calcula los cuartiles de la variable circ_tronco_cm
-percentil_25 <- quantile(trees$circ_tronco_cm, 0.25)
-percentil_50 <- quantile(trees$circ_tronco_cm, 0.50)
-percentil_75 <- quantile(trees$circ_tronco_cm, 0.75)
+percentil_25 <- quantile(train_data$circ_tronco_cm, 0.25)
+percentil_50 <- quantile(train_data$circ_tronco_cm, 0.50)
+percentil_75 <- quantile(train_data$circ_tronco_cm, 0.75)
 
-cuts <- c(0, percentil_25, percentil_50, percentil_75, max(trees$circ_tronco_cm))
+cuts <- c(0, percentil_25, percentil_50, percentil_75, max(train_data$circ_tronco_cm))
 
 tags <- c("bajo", "medio", "alto", "muy alto")
 
 # crea la variable categórica
-trees$circ_tronco_cm_cat <- cut(trees$circ_tronco_cm, breaks = cuts, labels = tags, include.lowest = TRUE)
+train_data$circ_tronco_cm_cat <- cut(train_data$circ_tronco_cm, breaks = cuts, labels = tags, include.lowest = TRUE)
 ```
 
 
@@ -272,7 +280,7 @@ trees$circ_tronco_cm_cat <- cut(trees$circ_tronco_cm, breaks = cuts, labels = ta
 Guardar el nuevo dataframe bajo el nombre de arbolado-mendoza-dataset-circ_tronco_cm-train.csv
 
 ```{r}
-write.csv(trees, "data/arbolado-mendoza-dataset-circ_tronco_cm-train.csv", row.names = FALSE)
+write.csv(train_data, "data/arbolado-balanced-mendoza-dataset-circ_tronco_cm-train.csv", row.names = FALSE)
 ```
 
 # Ejercicio 4: Clasificador Aleatório
@@ -314,12 +322,12 @@ random_classifier <- function(data) {
 Cargar el archivo arbolado-mendoza-dataset-validation.csv como una data.frame y aplicarle la función random_classifier.
 
 ```{r}
-set.seed(123)  # semilla para reproducibilidad
+set.seed(2023)  # semilla para reproducibilidad
 data <- read.csv("data/arbolado-mendoza-dataset-validation.csv")
 random_prediction <- agregar_prediccion_aleatoria(data)
 random_prediction <- random_classifier(random_prediction)
 
-# saveRDS(random_prediction_data, "data-frames/random_prediction.rds")
+saveRDS(random_prediction, "data-frames/random_prediction.rds")
 ```
 
 ## Ejercicio 4.4
@@ -375,8 +383,8 @@ create_confusion_matrix <- function(data) {
 ```{r}
 create_confusion_matrix_tidyr <- function (data){
     confusion_matrix <- data %>%
-        group_by(inclinacion_peligrosa, prediction_class) %>%
-        summarize(count = n()) %>%
+        dplyr::group_by(inclinacion_peligrosa, prediction_class) %>%
+        dplyr::summarize(count = n()) %>%
         pivot_wider(names_from = prediction_class, values_from = count) %>%
         replace(is.na(.), 0)  # reemplaza los valores NA por 0
 
@@ -387,6 +395,7 @@ create_confusion_matrix_tidyr <- function (data){
 ```{r}
 random_prediction <- readRDS("data-frames/random_prediction.rds")
 random_confusion_matrix <- create_confusion_matrix(random_prediction)
+random_confusion_matrix
 saveRDS(random_confusion_matrix, "data-frames/random_confusion_matrix.rds")
 ```
 
@@ -401,15 +410,15 @@ La función deberá devolver el dataframe original junto a la nueva columna gene
 ```{r}
 biggerclass_classifier <- function(data) {
     bigger_class <- data %>%
-        group_by(inclinacion_peligrosa) %>%
-        summarize(count = n()) %>%
+        dplyr::group_by(inclinacion_peligrosa) %>%
+        dplyr::summarize(count = n()) %>%
         arrange(desc(count)) %>%  # la clase mayoritaria es la primera
         first() %>%
         pull(inclinacion_peligrosa)
 
     # agrega la nueva columna prediction_class con la clase mayoritaria
     data <- data %>%
-        mutate(prediction_class = bigger_class)
+        dplyr::mutate(prediction_class = bigger_class)
 
     return(data)
 }
@@ -428,6 +437,7 @@ saveRDS(biggerclass_prediction, "data-frames/biggerclass_prediction.rds")
 ```{r}
 biggerclass_prediction <- readRDS("data-frames/biggerclass_prediction.rds")
 biggerclass_confusion_matrix <- create_confusion_matrix(biggerclass_prediction)
+biggerclass_confusion_matrix
 saveRDS(biggerclass_confusion_matrix, "data-frames/biggerclass_confusion_matrix.rds")
 ```
 
@@ -494,31 +504,31 @@ los índices del dataframe que fueron seleccionados para el primer fold, y así 
 
 ```{r}
 create_folds <- function (data, num_folds) {
-  num_rows <- nrow(data)
+    num_rows <- nrow(data)
 
-  # mezcla aleatoriamente los índices de las filas
-  set.seed(123)  # para hacer la mezcla reproducible
-  shuffled_indices <- sample(1:num_rows)
+    # mezcla aleatoriamente los índices de las filas
+    set.seed(2023)  # para hacer la mezcla reproducible
+    shuffled_indices <- sample(1:num_rows)
 
-  # tamaño de cada fold
-  fold_size <- floor(num_rows / num_folds)
+    # tamaño de cada fold
+    fold_size <- floor(num_rows / num_folds)
 
-  # lista para almacenar los índices de los folds
-  folds_list <- list()
+    # lista para almacenar los índices de los folds
+    folds_list <- list()
 
-  # crea los folds
-  for (i in 1:num_folds) {
-    # calcula los índices del fold actual
-    start_index <- (i - 1) * fold_size + 1
-    end_index <- min(i * fold_size, num_rows)
-    fold_indices <- shuffled_indices[start_index:end_index]
+    # crea los folds
+    for (i in 1:num_folds) {
+        # calcula los índices del fold actual
+        start_index <- (i - 1) * fold_size + 1
+        end_index <- min(i * fold_size, num_rows)
+        fold_indices <- shuffled_indices[start_index:end_index]
 
-    # almacena los índices
-    fold_name <- paste0("Fold", i)
-    folds_list[[fold_name]] <- fold_indices
-  }
+        # almacena los índices
+        fold_name <- paste0("Fold", i)
+        folds_list[[fold_name]] <- fold_indices
+    }
 
-  return(folds_list)
+    return(folds_list)
 }
 ```
 
@@ -544,6 +554,7 @@ Devolver media y desviación estándar.
 ```{r}
 cross_validation <- function(data, num_folds) {
     folds <- create_folds(data, num_folds)
+    data$especie <- factor(data$especie)
 
     # almacenar las métricas
     accuracy_vector <- NULL
@@ -568,7 +579,7 @@ cross_validation <- function(data, num_folds) {
         # cálculo de métricas
         confusion_matrix <- confusionMatrix(predictions, as.factor(test_data$inclinacion_peligrosa))
         accuracy_vector <- c(accuracy_vector, confusion_matrix$overall["Accuracy"])
-        precision_vector <- c(precision_vector, confusion_matrix$byClass["Pos_Prediction"])
+        precision_vector <- c(precision_vector, confusion_matrix$byClass["Precision"])
         sensitivity_vector <- c(sensitivity_vector, confusion_matrix$byClass["Sensitivity"])
         specificity_vector <- c(specificity_vector, confusion_matrix$byClass["Specificity"])
     }
@@ -599,4 +610,6 @@ data_train$ultima_modificacion <- NULL
 data_train$area_seccion <- NULL
 metrics <- cross_validation(data_train, 10)
 metrics
+
+saveRDS(metrics, "data-frames/cross_validation_metrics.rds")
 ```
