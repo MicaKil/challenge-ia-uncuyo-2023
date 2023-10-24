@@ -12,7 +12,6 @@ library(ggplot2)
 library(tidyr)
 library(rpart)
 library(caret)
-library(forcats)
 ```
 Antes de realizar un primer envío se deben realizar las siguientes actividades:
 
@@ -385,7 +384,7 @@ create_confusion_matrix_tidyr <- function (data){
     confusion_matrix <- data %>%
         dplyr::group_by(inclinacion_peligrosa, prediction_class) %>%
         dplyr::summarize(count = n()) %>%
-        pivot_wider(names_from = prediction_class, values_from = count) %>%
+        tidyr::pivot_wider(names_from = prediction_class, values_from = count) %>%
         replace(is.na(.), 0)  # reemplaza los valores NA por 0
 
     return(confusion_matrix)
@@ -573,7 +572,7 @@ cross_validation <- function(data, num_folds) {
         test_data$especie <- factor(test_data$especie, levels = levels(data$especie))
 
         train_formula <- formula(inclinacion_peligrosa ~ altura + circ_tronco_cm + lat + long + seccion + especie)
-        model <- rpart(train_formula, data = train_data)
+        model <- rpart::rpart(train_formula, data = train_data)
         predictions <- predict(model, test_data, type = "class")
 
         # cálculo de métricas
@@ -586,10 +585,10 @@ cross_validation <- function(data, num_folds) {
 
     # media y desviación estándar
     metrics_mean <- c(
-    Accuracy = mean(accuracy_vector),
-    Precision = mean(precision_vector),
-    Sensitivity = mean(sensitivity_vector),
-    Specificity = mean(specificity_vector)
+        Accuracy = mean(accuracy_vector),
+        Precision = mean(precision_vector),
+        Sensitivity = mean(sensitivity_vector),
+        Specificity = mean(specificity_vector)
     )
 
     metrics_sd <- c(

@@ -1,0 +1,134 @@
+---
+title: "Parte B"
+output: html_document
+author: "Micaela Del Longo @MicaKil"
+---
+
+# Librerías
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lattice)
+library(caret)
+library(randomForest)
+```
+
+
+# Separación de Datos
+
+```{r}
+data <- read.csv("data/arbolado-mza-dataset.csv")
+data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
+
+# remueve columnas innecesarias
+data$ultima_modificacion <- NULL
+data$area_seccion <- NULL
+data$nombre_seccion <- NULL
+
+data_inclinacion_peligrosa_0 <- data %>% filter(inclinacion_peligrosa == 0)
+data_inclinacion_peligrosa_1 <- data %>% filter(inclinacion_peligrosa == 1)
+
+# undersampling
+set.seed(2023)
+indeces_inclinacion_peligrosa_0 <- caret::createDataPartition(data_inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.5, list = FALSE)
+undersampled_data <- data_inclinacion_peligrosa_0[indeces_inclinacion_peligrosa_0, ]
+
+# merge
+balanced_data <- rbind(data_inclinacion_peligrosa_1, undersampled_data)  # bind rows
+balanced_data <- balanced_data[order(balanced_data$id), ]  # ordena por id
+
+# split by 80/20
+set.seed(2023)
+indeces_train <- caret::createDataPartition(balanced_data$inclinacion_peligrosa, p = 0.8, list = FALSE)
+train_data <- balanced_data[indeces_train, ]
+validation_data <- balanced_data[-indeces_train, ]
+
+train_1 <- train_data %>% filter(inclinacion_peligrosa == 1) %>% nrow()
+rows_train <- nrow(train_data)
+percent_train <- train_1 / rows_train * 100
+validation_1 <- validation_data %>% filter(inclinacion_peligrosa == 1) %>% nrow()
+rows_validation <- nrow(validation_data)
+percent_validation <- validation_1 / rows_validation * 100
+
+# guardar
+write.csv(train_data, "data_tests/arbolado-mendoza-dataset-train.csv", row.names = FALSE)
+write.csv(validation_data, "data_tests/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
+```
+
+
+# Análisis exploratorio
+
+## Peligrosidad por Especie
+
+```{r}
+especies_peligrosas <- train_data %>%
+    dplyr::group_by(especie) %>%  # agrupa por especie
+    dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
+    dplyr::mutate(peligrosidad_especie = peligrosa_count / total_count)
+```
+
+
+## Gráfico de Peligrosidad por Especie
+
+```{r}
+ggplot(especies_peligrosas, aes(x = reorder(especie, -peligrosidad_especie), y = peligrosidad_especie, fill = reorder(especie, -peligrosidad_especie))) +
+    geom_bar(stat = "identity") +
+    scale_fill_manual(values = rainbow(length(unique(especies_peligrosas$especie)))) +
+    labs(x = "Especie del Arbol", y = "Proporcion de Inclinacion Peligrosa") +
+    ggtitle("Peligrosidad por Especie de Arbol") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+
+ggsave("pics_kaggle/peligrosidad_especie.png", plot = last_plot(), width = 8, height = 6)
+```
+
+## Agregar Peligrosidad por Especie al Dataset
+
+```{r}
+train_data <- train_data %>%
+    left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
+train_data
+
+validation_data <- validation_data %>%
+    left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
+
+```
+
+```{r}
+# RFE is popular because it is easy to configure and use and because it is effective at selecting those features (columns) in a training dataset that are more or most relevant in predicting the target variable.
+rfecrtl <- caret::rfeControl(functions=rfFuncs, method="cv", number=10, verbose=TRUE, allowParallel=TRUE)
+results <- caret::rfe(inclinacion_peligrosa ~ altura + circ_tronco_cm + diametro_tronco + lat + long + seccion + especie + peligrosidad_especie,
+                      data=train_data,
+                      sizes=1:10,
+                      rfeControl=rfecrtl)
+results
+predictors(results)
+plot(results)
+```
+
+# Modelo
+
+```{r}
+rf <- randomForest(inclinacion_peligrosa ~ altura + circ_tronco_cm + diametro_tronco + lat + long + seccion + especie + peligrosidad_especie,
+                   data = train_data,
+				   ntree = 1000,
+			       )
+```
+
+
+```{r}
+rf
+varImpPlot(rf)
+```
+
+# Predicción y Envío
+
+```{r}
+predictions <- predict(rf, validation_data)
+predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un factor, hay que pasarlo a numeric
+
+result_dataset <- data.frame(id = validation_data$id, inclinacion_peligrosa = predictions_numeric)
+result_dataset
+
+write.csv(result_dataset, "data_tests/arbolado-mendoza-dataset-result.csv", row.names = FALSE)
+```

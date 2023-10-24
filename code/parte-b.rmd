@@ -1,0 +1,100 @@
+---
+title: "Parte B"
+output: html_document
+author: "Micaela Del Longo @MicaKil"
+---
+
+# Librerías
+
+```{r}
+library(dplyr)
+library(ggplot2)
+library(lattice)
+library(caret)
+library(randomForest)
+```
+
+
+# Preparación de los Datos
+
+## Eliminación de Columnas Innecesarias (i hope)
+
+```{r}
+data <- read.csv("datasets/arbolado-mza-dataset.csv")
+data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
+
+# remueve columnas innecesarias
+data$ultima_modificacion <- NULL
+data$area_seccion <- NULL
+data$nombre_seccion <- NULL
+
+test_data <- read.csv("datasets/arbolado-mza-dataset-test.csv")
+test_data$ultima_modificacion <- NULL
+test_data$area_seccion <- NULL
+test_data$nombre_seccion <- NULL
+```
+
+## Agregar Peligrosidad por Especie al Dataset
+
+```{r}
+especies_peligrosas <- data %>%
+    dplyr::group_by(especie) %>%  # agrupa por especie
+    dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
+    dplyr::mutate(peligrosidad_especie = peligrosa_count / total_count)
+
+data <- data %>%
+    left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
+
+# se agrega a test_data también
+test_data <- test_data %>%
+    left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
+
+```
+
+## UnderSampling
+```{r}
+inclinacion_peligrosa_0 <- data %>% filter(inclinacion_peligrosa == 0)
+inclinacion_peligrosa_1 <- data %>% filter(inclinacion_peligrosa == 1)
+
+set.seed(2023)
+indeces <- caret::createDataPartition(inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.5, list = FALSE)
+undersampled_data <- inclinacion_peligrosa_0[indeces, ]
+
+train_data <- rbind(inclinacion_peligrosa_1, undersampled_data)  # bind rows
+train_data <- train_data[order(train_data$id), ]  # ordena por id
+
+# calculate percentage of inclinacion_peligrosa == 1 in train_data
+percent_1 <- train_data %>% filter(inclinacion_peligrosa == 1) %>% nrow() / train_data %>% nrow()
+
+write.csv(train_data, "datasets/arbolado-mza-dataset-train.csv", row.names = FALSE)
+```
+
+# Modelo y Entrenamiento
+
+```{r}
+rf <- randomForest(inclinacion_peligrosa ~ altura + circ_tronco_cm + diametro_tronco + lat + long + seccion + especie + peligrosidad_especie,
+                   data = train_data,
+				   ntree = 500,
+			       )
+print(rf)
+```
+
+
+```{r}
+varImpPlot(rf)
+```
+
+# Predicción y Envío
+
+```{r}
+predictions <- predict(rf, test_data)
+predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un factor, hay que pasarlo a numeric
+
+print(predictions_numeric)
+```
+
+```{r}
+result_dataset <- data.frame(id = test_data$id, inclinacion_peligrosa = predictions_numeric)
+
+write.csv(result_dataset, "datasets/submission.csv", row.names = FALSE)
+```
