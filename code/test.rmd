@@ -25,8 +25,8 @@ data$ultima_modificacion <- NULL
 data$area_seccion <- NULL
 data$nombre_seccion <- NULL
 
-data_inclinacion_peligrosa_0 <- data %>% filter(inclinacion_peligrosa == 0)
-data_inclinacion_peligrosa_1 <- data %>% filter(inclinacion_peligrosa == 1)
+data_inclinacion_peligrosa_0 <- data %>% dplyr::filter(inclinacion_peligrosa == 0)
+data_inclinacion_peligrosa_1 <- data %>% dplyr::filter(inclinacion_peligrosa == 1)
 
 # undersampling
 set.seed(2023)
@@ -43,10 +43,10 @@ indeces_train <- caret::createDataPartition(balanced_data$inclinacion_peligrosa,
 train_data <- balanced_data[indeces_train, ]
 validation_data <- balanced_data[-indeces_train, ]
 
-train_1 <- train_data %>% filter(inclinacion_peligrosa == 1) %>% nrow()
+train_1 <- train_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow()
 rows_train <- nrow(train_data)
 percent_train <- train_1 / rows_train * 100
-validation_1 <- validation_data %>% filter(inclinacion_peligrosa == 1) %>% nrow()
+validation_1 <- validation_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow()
 rows_validation <- nrow(validation_data)
 percent_validation <- validation_1 / rows_validation * 100
 
@@ -56,6 +56,16 @@ write.csv(validation_data, "data_tests/arbolado-mendoza-dataset-validation.csv",
 ```
 
 # Análisis exploratorio
+
+> In **count encoding** we replace the categories by the count of the observations that show that category in the dataset.
+> Similarly, we can replace the category by the **frequency** -or percentage- of observations in the dataset. That is, if
+> 10 of our 100 observations show the colour blue, we would replace blue by 10 if doing count encoding, or by 0.1 if
+> replacing by the frequency. These techniques capture the representation of each label in a dataset, but the encoding
+> may not necessarily be predictive of the outcome.
+>
+> This approach is heavily used in Kaggle competitions, wherein we replace each label of the categorical variable by
+> the count, this is the amount of times each label appears in the dataset. Or the frequency, this is the percentage
+> of observations within that category. The two methods are equivalent.
 
 ## Peligrosidad Encoding
 
@@ -98,7 +108,7 @@ ggplot(especies_peligrosas,
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
 ```
 
-### Agregar Peligrosidad por Especie al Dataset
+### Reemplazo de Columna de Especie por Peligrosidad por Especie
 
 ```{r}
 train_data <- train_data %>%
@@ -106,6 +116,10 @@ train_data <- train_data %>%
 
 validation_data <- validation_data %>%
     left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
+
+train_data$especie <- NULL
+validation_data$especie <- NULL
+train_data
 ```
 
 ## Peligrosidad por Diámetro
@@ -134,6 +148,8 @@ train_data <- train_data %>%
 validation_data <- validation_data %>%
     left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
 
+train_data$diametro_tronco <- NULL
+validation_data$diametro_tronco <- NULL
 validation_data
 ```
 
@@ -162,6 +178,10 @@ train_data <- train_data %>%
 
 validation_data <- validation_data %>%
 	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
+
+train_data$altura <- NULL
+validation_data$altura <- NULL
+validation_data
 ```
 
 # Recursive Feature Elimination
@@ -169,7 +189,7 @@ validation_data <- validation_data %>%
 ```{r}
 # RFE is popular because it is easy to configure and use and because it is effective at selecting those features (columns) in a training dataset that are more or most relevant in predicting the target variable.
 rfecrtl <- caret::rfeControl(functions=rfFuncs, method="cv", number=10, verbose=TRUE, allowParallel=TRUE)
-results <- caret::rfe(inclinacion_peligrosa ~ altura + circ_tronco_cm + diametro_tronco + lat + long + seccion + especie + peligrosidad_especie + peligrosidad_diametro,
+results <- caret::rfe(inclinacion_peligrosa ~ circ_tronco_cm + lat + long + seccion + especie + peligrosidad_especie + peligrosidad_diametro,
                       data=train_data,
                       sizes=1:10,
                       rfeControl=rfecrtl)
@@ -180,9 +200,10 @@ plot(results)
 # Modelo
 
 ```{r}
-rf <- randomForest(inclinacion_peligrosa ~ altura + circ_tronco_cm + diametro_tronco + lat + long + seccion + especie + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura,
+rf <- randomForest(inclinacion_peligrosa ~ circ_tronco_cm + lat + long + seccion + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura,
                    data = train_data,
-                   ntree = 600,
+                   ntree = 1000
+				   #mtry = 3,  # Number of variables randomly sampled at each split. Default values: for classification sqrt(p) and regression p/3
                    )
 ```
 

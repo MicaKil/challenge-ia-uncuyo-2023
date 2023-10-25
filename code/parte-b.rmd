@@ -33,21 +33,62 @@ test_data$area_seccion <- NULL
 test_data$nombre_seccion <- NULL
 ```
 
-## Agregar Peligrosidad por Especie al Dataset
+## Peligrosidad Encoding
 
 ```{r}
-especies_peligrosas <- data %>%
-    dplyr::group_by(especie) %>%  # agrupa por especie
-    dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
-    dplyr::mutate(peligrosidad_especie = peligrosa_count / total_count)
+peligrosidad_encoding <- function(data, column, new_column) {
+    peligrosidad <- data %>%
+        dplyr::group_by(!!sym(column)) %>%
+        dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
+        dplyr::mutate({{new_column}} := peligrosa_count / total_count)
+
+    return(peligrosidad)
+}
+```
+
+### Reemplazo de Columna de Especie por Peligrosidad por Especie
+
+```{r}
+especies_peligrosas <- peligrosidad_encoding(data, "especie", "peligrosidad_especie")
 
 data <- data %>%
     left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
 
-# se agrega a test_data también
 test_data <- test_data %>%
     left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
 
+data$especie <- NULL
+test_data$especie <- NULL
+```
+
+### Reemplazo de Columna de Diámetro por Peligrosidad por Diámetro
+
+```{r}
+diametro_peligroso <- peligrosidad_encoding(data, "diametro_tronco", "peligrosidad_diametro")
+
+data <- data %>%
+	left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
+
+test_data <- test_data %>%
+	left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
+
+data$diametro_tronco <- NULL
+test_data$diametro_tronco <- NULL
+```
+
+### Reemplazo de Columna de Áltura por Peligrosidad por Áltura
+
+```{r}
+altura_peligrosa <- peligrosidad_encoding(data, "altura", "peligrosidad_altura")
+
+data <- data %>%
+	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
+
+test_data <- test_data %>%
+	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
+
+data$altura <- NULL
+test_data$altura <- NULL
 ```
 
 ## UnderSampling
@@ -71,9 +112,9 @@ write.csv(train_data, "datasets/arbolado-mza-dataset-train.csv", row.names = FAL
 # Modelo y Entrenamiento
 
 ```{r}
-rf <- randomForest(inclinacion_peligrosa ~ altura + circ_tronco_cm + diametro_tronco + lat + long + seccion + especie + peligrosidad_especie,
+rf <- randomForest(inclinacion_peligrosa ~ circ_tronco_cm + lat + long + seccion + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura,
                    data = train_data,
-				   ntree = 500,
+				   ntree = 800,
 			       )
 #print(rf)
 ```
