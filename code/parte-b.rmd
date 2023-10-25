@@ -76,7 +76,7 @@ data$diametro_tronco <- NULL
 test_data$diametro_tronco <- NULL
 ```
 
-### Reemplazo de Columna de Áltura por Peligrosidad por Áltura
+### Reemplazo de Columna de Altura por Peligrosidad por Altura
 
 ```{r}
 altura_peligrosa <- peligrosidad_encoding(data, "altura", "peligrosidad_altura")
