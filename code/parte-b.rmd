@@ -25,15 +25,13 @@ data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
 # remueve columnas innecesarias
 data$ultima_modificacion <- NULL
 data$area_seccion <- NULL
-data$nombre_seccion <- NULL
 
 test_data <- read.csv("data/data-parte-b/arbolado-mza-dataset-test.csv")
 test_data$ultima_modificacion <- NULL
 test_data$area_seccion <- NULL
-test_data$nombre_seccion <- NULL
 ```
 
-## Peligrosidad Encoding
+## Feature Engineering: Peligrosidad Encoding
 
 ```{r}
 peligrosidad_encoding <- function(data, column, new_column) {
@@ -44,6 +42,24 @@ peligrosidad_encoding <- function(data, column, new_column) {
 
     return(peligrosidad)
 }
+```
+
+### Reemplazo de Columna de Sección por Peligrosidad por Sección
+
+```{r}
+secciones_peligrosas <- peligrosidad_encoding(data, "nombre_seccion", "peligrosidad_seccion")
+
+data <- data %>%
+	left_join(secciones_peligrosas %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
+
+test_data <- test_data %>%
+	left_join(secciones_peligrosas %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
+
+data$nombre_seccion <- NULL
+data$seccion <- NULL
+
+test_data$nombre_seccion <- NULL
+test_data$seccion <- NULL
 ```
 
 ### Reemplazo de Columna de Especie por Peligrosidad por Especie
@@ -112,7 +128,7 @@ write.csv(train_data, "data/data-parte-b/arbolado-mza-dataset-train.csv", row.na
 # Modelo y Entrenamiento
 
 ```{r}
-rf <- randomForest(inclinacion_peligrosa ~ circ_tronco_cm + lat + long + seccion + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura,
+rf <- randomForest(inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion,
                    data = train_data,
 				   ntree = 800,
 			       )
