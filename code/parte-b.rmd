@@ -22,7 +22,6 @@ library(randomForest)
 ```{r}
 data <- read.csv("datasets/arbolado-mza-dataset.csv")
 data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
-
 # remueve columnas innecesarias
 data$ultima_modificacion <- NULL
 data$area_seccion <- NULL
@@ -57,7 +56,7 @@ inclinacion_peligrosa_0 <- data %>% filter(inclinacion_peligrosa == 0)
 inclinacion_peligrosa_1 <- data %>% filter(inclinacion_peligrosa == 1)
 
 set.seed(2023)
-indeces <- caret::createDataPartition(inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.5, list = FALSE)
+indeces <- caret::createDataPartition(inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.125, list = FALSE)
 undersampled_data <- inclinacion_peligrosa_0[indeces, ]
 
 train_data <- rbind(inclinacion_peligrosa_1, undersampled_data)  # bind rows
@@ -76,9 +75,8 @@ rf <- randomForest(inclinacion_peligrosa ~ altura + circ_tronco_cm + diametro_tr
                    data = train_data,
 				   ntree = 500,
 			       )
-print(rf)
+#print(rf)
 ```
-
 
 ```{r}
 varImpPlot(rf)
@@ -90,7 +88,7 @@ varImpPlot(rf)
 predictions <- predict(rf, test_data)
 predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un factor, hay que pasarlo a numeric
 
-print(predictions_numeric)
+#print(predictions_numeric)
 ```
 
 ```{r}

@@ -14,7 +14,6 @@ library(caret)
 library(randomForest)
 ```
 
-
 # Separación de Datos
 
 ```{r}
@@ -31,7 +30,7 @@ data_inclinacion_peligrosa_1 <- data %>% filter(inclinacion_peligrosa == 1)
 
 # undersampling
 set.seed(2023)
-indeces_inclinacion_peligrosa_0 <- caret::createDataPartition(data_inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.5, list = FALSE)
+indeces_inclinacion_peligrosa_0 <- caret::createDataPartition(data_inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.125, list = FALSE)
 undersampled_data <- data_inclinacion_peligrosa_0[indeces_inclinacion_peligrosa_0, ]
 
 # merge
@@ -56,52 +55,124 @@ write.csv(train_data, "data_tests/arbolado-mendoza-dataset-train.csv", row.names
 write.csv(validation_data, "data_tests/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
 ```
 
-
 # Análisis exploratorio
+
+## Peligrosidad Encoding
+
+```{r}
+peligrosidad_encoding <- function(data, column, new_column) {
+    peligrosidad <- data %>%
+        dplyr::group_by(!!sym(column)) %>%
+        dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
+        dplyr::mutate({{new_column}} := peligrosa_count / total_count)
+
+    return(peligrosidad)
+}
+
+# p <- peligrosidad_encoding(train_data, "especie", "peligrosidad_especie")
+# p
+```
 
 ## Peligrosidad por Especie
 
 ```{r}
-especies_peligrosas <- train_data %>%
-    dplyr::group_by(especie) %>%  # agrupa por especie
-    dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
-    dplyr::mutate(peligrosidad_especie = peligrosa_count / total_count)
+# especies_peligrosas <- train_data %>%
+#     dplyr::group_by(especie) %>%  # agrupa por especie
+#     dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
+#     dplyr::mutate(peligrosidad_especie = peligrosa_count / total_count)
+
+especies_peligrosas <- peligrosidad_encoding(train_data, "especie", "peligrosidad_especie")
 ```
 
-
-## Gráfico de Peligrosidad por Especie
+### Gráfico de Peligrosidad por Especie
 
 ```{r}
-ggplot(especies_peligrosas, aes(x = reorder(especie, -peligrosidad_especie), y = peligrosidad_especie, fill = reorder(especie, -peligrosidad_especie))) +
+ggplot(especies_peligrosas,
+       aes(x = reorder(especie, -peligrosidad_especie),
+           y = peligrosidad_especie,
+           fill = reorder(especie, -peligrosidad_especie))) +
     geom_bar(stat = "identity") +
     scale_fill_manual(values = rainbow(length(unique(especies_peligrosas$especie)))) +
     labs(x = "Especie del Arbol", y = "Proporcion de Inclinacion Peligrosa") +
     ggtitle("Peligrosidad por Especie de Arbol") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
-
-ggsave("pics_kaggle/peligrosidad_especie.png", plot = last_plot(), width = 8, height = 6)
 ```
 
-## Agregar Peligrosidad por Especie al Dataset
+### Agregar Peligrosidad por Especie al Dataset
 
 ```{r}
 train_data <- train_data %>%
     left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
-train_data
 
 validation_data <- validation_data %>%
     left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
-
 ```
+
+## Peligrosidad por Diámetro
+
+```{r}
+diametro_peligroso <- peligrosidad_encoding(train_data, "diametro_tronco", "peligrosidad_diametro")
+print(diametro_peligroso)
+```
+
+```{r}
+ggplot(diametro_peligroso,
+       aes(x = reorder(diametro_tronco, -peligrosidad_diametro),
+           y = peligrosidad_diametro,
+           fill = reorder(diametro_tronco, -peligrosidad_diametro))) +
+    geom_bar(stat = "identity") +
+    scale_fill_manual(values = rainbow(length(unique(diametro_peligroso$diametro_tronco)))) +
+    labs(x = "Diametro del Arbol", y = "Proporcion de Inclinacion Peligrosa") +
+    ggtitle("Peligrosidad por Diametro de Arbol") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+```{r}
+train_data <- train_data %>%
+    left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
+
+validation_data <- validation_data %>%
+    left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
+
+validation_data
+```
+
+## Peligrosidad por Altura
+
+```{r}
+altura_peligrosa <- peligrosidad_encoding(train_data, "altura", "peligrosidad_altura")
+print(altura_peligrosa)
+```
+
+```{r}
+ggplot(altura_peligrosa,
+       aes(x = reorder(altura, -peligrosidad_altura),
+           y = peligrosidad_altura,
+           fill = reorder(altura, -peligrosidad_altura))) +
+    geom_bar(stat = "identity") +
+    scale_fill_manual(values = rainbow(length(unique(altura_peligrosa$altura)))) +
+    labs(x = "Altura del Arbol", y = "Proporcion de Inclinacion Peligrosa") +
+    ggtitle("Peligrosidad por Altura de Arbol") +
+    theme(axis.text.x = element_text(angle = 90, hjust = 1))
+```
+
+```{r}
+train_data <- train_data %>%
+	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
+
+validation_data <- validation_data %>%
+	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
+```
+
+# Recursive Feature Elimination
 
 ```{r}
 # RFE is popular because it is easy to configure and use and because it is effective at selecting those features (columns) in a training dataset that are more or most relevant in predicting the target variable.
 rfecrtl <- caret::rfeControl(functions=rfFuncs, method="cv", number=10, verbose=TRUE, allowParallel=TRUE)
-results <- caret::rfe(inclinacion_peligrosa ~ altura + circ_tronco_cm + diametro_tronco + lat + long + seccion + especie + peligrosidad_especie,
+results <- caret::rfe(inclinacion_peligrosa ~ altura + circ_tronco_cm + diametro_tronco + lat + long + seccion + especie + peligrosidad_especie + peligrosidad_diametro,
                       data=train_data,
                       sizes=1:10,
                       rfeControl=rfecrtl)
-results
 predictors(results)
 plot(results)
 ```
@@ -109,26 +180,31 @@ plot(results)
 # Modelo
 
 ```{r}
-rf <- randomForest(inclinacion_peligrosa ~ altura + circ_tronco_cm + diametro_tronco + lat + long + seccion + especie + peligrosidad_especie,
+rf <- randomForest(inclinacion_peligrosa ~ altura + circ_tronco_cm + diametro_tronco + lat + long + seccion + especie + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura,
                    data = train_data,
-				   ntree = 1000,
-			       )
+                   ntree = 600,
+                   )
 ```
-
 
 ```{r}
 rf
 varImpPlot(rf)
 ```
 
-# Predicción y Envío
+# Predicción
 
 ```{r}
 predictions <- predict(rf, validation_data)
+confusion_matrix <- confusionMatrix(predictions, validation_data$inclinacion_peligrosa)
+confusion_matrix
+```
+
+```{r}
 predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un factor, hay que pasarlo a numeric
 
 result_dataset <- data.frame(id = validation_data$id, inclinacion_peligrosa = predictions_numeric)
-result_dataset
+```
 
-write.csv(result_dataset, "data_tests/arbolado-mendoza-dataset-result.csv", row.names = FALSE)
+```{r}
+#write.csv(result_dataset, "data_tests/arbolado-mendoza-dataset-result.csv", row.names = FALSE)
 ```

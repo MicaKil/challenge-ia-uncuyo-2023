@@ -30,7 +30,7 @@ data_inclinacion_peligrosa_1 <- data %>% filter(inclinacion_peligrosa == 1)
 
 # undersampling
 set.seed(2023)
-indeces_inclinacion_peligrosa_0 <- caret::createDataPartition(data_inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.1, list = FALSE)
+indeces_inclinacion_peligrosa_0 <- caret::createDataPartition(data_inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.125, list = FALSE)
 undersampled_data <- data_inclinacion_peligrosa_0[indeces_inclinacion_peligrosa_0, ]
 
 # merge
@@ -38,7 +38,6 @@ balanced_data <- rbind(data_inclinacion_peligrosa_1, undersampled_data)  # bind 
 balanced_data <- balanced_data[order(balanced_data$id), ]  # ordena por id
 
 # split by 80/20
-
 set.seed(2023)
 indeces_train <- caret::createDataPartition(balanced_data$inclinacion_peligrosa, p = 0.8, list = FALSE)
 train_data <- balanced_data[indeces_train, ]
