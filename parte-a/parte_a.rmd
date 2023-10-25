@@ -22,7 +22,7 @@ y crear un nuevo archivo con el nombre de arbolado-mendoza-dataset-validation.cs
 arbolado-mendoza-dataset-train.csv
 
 ```{r}
-data <- read.csv("data/arbolado-mza-dataset.csv")
+data <- read.csv("data/data-parte-a/arbolado-mza-dataset.csv")
 data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
 
 data_inclinacion_peligrosa_0 <- data %>% filter(inclinacion_peligrosa == 0)
@@ -51,8 +51,8 @@ rows_validation <- nrow(validation_data)
 percent_validation <- validation_1 / rows_validation * 100
 
 # guardar
-write.csv(train_data, "data/arbolado-mendoza-dataset-train.csv", row.names = FALSE)
-write.csv(validation_data, "data/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
+write.csv(train_data, "data/data-parte-a/arbolado-mendoza-dataset-train.csv", row.names = FALSE)
+write.csv(validation_data, "data/data-parte-a/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
 ```
 
 # Ejercicio 2
@@ -66,7 +66,7 @@ A partir del archivo arbolado-mendoza-dataset-train.csv responder las siguientes
 respuesta.
 
 ```{r}
-train_data <- read.csv("data/arbolado-mendoza-dataset-train.csv")
+train_data <- read.csv("data/data-parte-a/arbolado-mendoza-dataset-train.csv")
 ```
 
 
@@ -258,7 +258,7 @@ solo 4 posibles valores \[muy alto, alto, medio, bajo]. Utilizar la información
 de corte para cada categoría.
 
 ```{r}
-train_data <- read.csv("data/arbolado-mendoza-dataset-train.csv")
+train_data <- read.csv("data/data-parte-a/arbolado-mendoza-dataset-train.csv")
 
 # calcula los cuartiles de la variable circ_tronco_cm
 percentil_25 <- quantile(train_data$circ_tronco_cm, 0.25)
@@ -278,7 +278,7 @@ train_data$circ_tronco_cm_cat <- cut(train_data$circ_tronco_cm, breaks = cuts, l
 Guardar el nuevo dataframe bajo el nombre de arbolado-mendoza-dataset-circ_tronco_cm-train.csv
 
 ```{r}
-write.csv(train_data, "data/arbolado-balanced-mendoza-dataset-circ_tronco_cm-train.csv", row.names = FALSE)
+write.csv(train_data, "data/data-parte-a/arbolado-balanced-mendoza-dataset-circ_tronco_cm-train.csv", row.names = FALSE)
 ```
 
 # Ejercicio 4: Clasificador Aleatório
@@ -321,7 +321,7 @@ Cargar el archivo arbolado-mendoza-dataset-validation.csv como una data.frame y 
 
 ```{r}
 set.seed(2023)  # semilla para reproducibilidad
-data <- read.csv("data/arbolado-mendoza-dataset-validation.csv")
+data <- read.csv("data/data-parte-a/arbolado-mendoza-dataset-validation.csv")
 random_prediction <- agregar_prediccion_aleatoria(data)
 random_prediction <- random_classifier(random_prediction)
 
@@ -427,7 +427,7 @@ Repetir los puntos 4.c y 4.d pero aplicando la nueva función biggerclass_classi
 
 
 ```{r}
-data <- read.csv("data/arbolado-mendoza-dataset-validation.csv")
+data <- read.csv("data/data-parte-a/arbolado-mendoza-dataset-validation.csv")
 biggerclass_prediction <- biggerclass_classifier(data)
 saveRDS(biggerclass_prediction, "data-frames/biggerclass_prediction.rds")
 ```
@@ -603,7 +603,7 @@ cross_validation <- function(data, num_folds) {
 
 
 ```{r}
-data_train <- read.csv("data/arbolado-mendoza-dataset-train.csv")
+data_train <- read.csv("data/data-parte-a/arbolado-mendoza-dataset-train.csv")
 data_train$ultima_modificacion <- NULL
 data_train$area_seccion <- NULL
 metrics <- cross_validation(data_train, 10)

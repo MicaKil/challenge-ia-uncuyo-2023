@@ -109,4 +109,4 @@ Como criterio de corte se utilizó como referencia a los cuartiles de la variabl
 ## Ejercicio 3.4
 Guardar el nuevo dataframe bajo el nombre de arbolado-mendoza-dataset-circ_tronco_cm-train.csv
 
-El nuevo dataframe se guardó en el archivo [arbolado-mendoza-dataset-circ_tronco_cm-train.csv](data/arbolado-mendoza-dataset-circ_tronco_cm-train.csv)
+El nuevo dataframe se guardó en el archivo [arbolado-mendoza-dataset-circ_tronco_cm-train.csv](data/data-parte-a/arbolado-mendoza-dataset-circ_tronco_cm-train.csv)

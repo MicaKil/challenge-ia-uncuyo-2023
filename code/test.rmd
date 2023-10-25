@@ -17,7 +17,7 @@ library(randomForest)
 # Separación de Datos
 
 ```{r}
-data <- read.csv("data/arbolado-mza-dataset.csv")
+data <- read.csv("data/data-tests/arbolado-mza-dataset-test.csv")
 data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
 
 # remueve columnas innecesarias
@@ -51,8 +51,8 @@ rows_validation <- nrow(validation_data)
 percent_validation <- validation_1 / rows_validation * 100
 
 # guardar
-write.csv(train_data, "data_tests/arbolado-mendoza-dataset-train.csv", row.names = FALSE)
-write.csv(validation_data, "data_tests/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
+write.csv(train_data, "data/data-tests/arbolado-mendoza-dataset-train.csv", row.names = FALSE)
+write.csv(validation_data, "data/data-tests/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
 ```
 
 # Análisis exploratorio
@@ -227,5 +227,5 @@ result_dataset <- data.frame(id = validation_data$id, inclinacion_peligrosa = pr
 ```
 
 ```{r}
-#write.csv(result_dataset, "data_tests/arbolado-mendoza-dataset-result.csv", row.names = FALSE)
+#write.csv(result_dataset, "data/data-tests/arbolado-mendoza-dataset-result.csv", row.names = FALSE)
 ```

@@ -98,7 +98,7 @@ cross_validation <- function(data, num_folds) {
 Tras ejecutar el siguiente código:
 
 ```R
-data_train <- read.csv("data/arbolado-mendoza-dataset-train.csv")
+data_train <- read.csv("data/data-parte-a/arbolado-mendoza-dataset-train.csv")
 data_train$ultima_modificacion <- NULL
 data_train$area_seccion <- NULL
 metrics <- cross_validation(data_train, 10)

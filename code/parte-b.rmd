@@ -20,14 +20,14 @@ library(randomForest)
 ## Eliminación de Columnas Innecesarias (i hope)
 
 ```{r}
-data <- read.csv("datasets/arbolado-mza-dataset.csv")
+data <- read.csv("data/data-parte-b/arbolado-mza-dataset.csv")
 data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
 # remueve columnas innecesarias
 data$ultima_modificacion <- NULL
 data$area_seccion <- NULL
 data$nombre_seccion <- NULL
 
-test_data <- read.csv("datasets/arbolado-mza-dataset-test.csv")
+test_data <- read.csv("data/data-parte-b/arbolado-mza-dataset-test.csv")
 test_data$ultima_modificacion <- NULL
 test_data$area_seccion <- NULL
 test_data$nombre_seccion <- NULL
@@ -106,7 +106,7 @@ train_data <- train_data[order(train_data$id), ]  # ordena por id
 # calculate percentage of inclinacion_peligrosa == 1 in train_data
 percent_1 <- train_data %>% filter(inclinacion_peligrosa == 1) %>% nrow() / train_data %>% nrow()
 
-write.csv(train_data, "datasets/arbolado-mza-dataset-train.csv", row.names = FALSE)
+write.csv(train_data, "data/data-parte-b/arbolado-mza-dataset-train.csv", row.names = FALSE)
 ```
 
 # Modelo y Entrenamiento
@@ -135,5 +135,5 @@ predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un
 ```{r}
 result_dataset <- data.frame(id = test_data$id, inclinacion_peligrosa = predictions_numeric)
 
-write.csv(result_dataset, "datasets/submission.csv", row.names = FALSE)
+write.csv(result_dataset, "data/data-parte-b/submission.csv", row.names = FALSE)
 ```
