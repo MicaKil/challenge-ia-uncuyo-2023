@@ -17,13 +17,12 @@ library(randomForest)
 # Separación de Datos
 
 ```{r}
-data <- read.csv("data/data-tests/arbolado-mza-dataset-test.csv")
+data <- read.csv("data/data-tests/arbolado-mza-dataset.csv")
 data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
 
 # remueve columnas innecesarias
 data$ultima_modificacion <- NULL
 data$area_seccion <- NULL
-data$nombre_seccion <- NULL
 
 data_inclinacion_peligrosa_0 <- data %>% dplyr::filter(inclinacion_peligrosa == 0)
 data_inclinacion_peligrosa_1 <- data %>% dplyr::filter(inclinacion_peligrosa == 1)
@@ -55,7 +54,7 @@ write.csv(train_data, "data/data-tests/arbolado-mendoza-dataset-train.csv", row.
 write.csv(validation_data, "data/data-tests/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
 ```
 
-# Análisis exploratorio
+# Feature Engineering
 
 > In **count encoding** we replace the categories by the count of the observations that show that category in the dataset.
 > Similarly, we can replace the category by the **frequency** -or percentage- of observations in the dataset. That is, if
@@ -130,18 +129,6 @@ print(diametro_peligroso)
 ```
 
 ```{r}
-ggplot(diametro_peligroso,
-       aes(x = reorder(diametro_tronco, -peligrosidad_diametro),
-           y = peligrosidad_diametro,
-           fill = reorder(diametro_tronco, -peligrosidad_diametro))) +
-    geom_bar(stat = "identity") +
-    scale_fill_manual(values = rainbow(length(unique(diametro_peligroso$diametro_tronco)))) +
-    labs(x = "Diametro del Arbol", y = "Proporcion de Inclinacion Peligrosa") +
-    ggtitle("Peligrosidad por Diametro de Arbol") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-```
-
-```{r}
 train_data <- train_data %>%
     left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
 
@@ -161,18 +148,6 @@ print(altura_peligrosa)
 ```
 
 ```{r}
-ggplot(altura_peligrosa,
-       aes(x = reorder(altura, -peligrosidad_altura),
-           y = peligrosidad_altura,
-           fill = reorder(altura, -peligrosidad_altura))) +
-    geom_bar(stat = "identity") +
-    scale_fill_manual(values = rainbow(length(unique(altura_peligrosa$altura)))) +
-    labs(x = "Altura del Arbol", y = "Proporcion de Inclinacion Peligrosa") +
-    ggtitle("Peligrosidad por Altura de Arbol") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-```
-
-```{r}
 train_data <- train_data %>%
 	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
 
@@ -182,6 +157,24 @@ validation_data <- validation_data %>%
 train_data$altura <- NULL
 validation_data$altura <- NULL
 validation_data
+```
+
+## Peligrosidad por Sección
+
+```{r}
+seccion_peligrosa <- peligrosidad_encoding(train_data, "nombre_seccion", "peligrosidad_seccion")
+
+train_data <- train_data %>%
+	left_join(seccion_peligrosa %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
+
+validation_data <- validation_data %>%
+	left_join(seccion_peligrosa %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
+
+train_data$nombre_seccion <- NULL
+train_data$seccion <- NULL
+
+validation_data$nombre_seccion <- NULL
+validation_data$seccion <- NULL
 ```
 
 # Recursive Feature Elimination
@@ -200,7 +193,7 @@ plot(results)
 # Modelo
 
 ```{r}
-rf <- randomForest(inclinacion_peligrosa ~ circ_tronco_cm + lat + long + seccion + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura,
+rf <- randomForest(inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion,
                    data = train_data,
                    ntree = 1000
 				   #mtry = 3,  # Number of variables randomly sampled at each split. Default values: for classification sqrt(p) and regression p/3
