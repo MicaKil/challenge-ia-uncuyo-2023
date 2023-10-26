@@ -12,9 +12,10 @@ library(ggplot2)
 library(lattice)
 library(caret)
 library(randomForest)
+library(ROSE)
 ```
 
-# Separación de Datos
+# Balance de Datos
 
 ```{r}
 data <- read.csv("data/data-tests/arbolado-mza-dataset.csv")
@@ -23,11 +24,14 @@ data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
 # remueve columnas innecesarias
 data$ultima_modificacion <- NULL
 data$area_seccion <- NULL
+```
 
+## Under-sampling
+
+```{r}
 data_inclinacion_peligrosa_0 <- data %>% dplyr::filter(inclinacion_peligrosa == 0)
 data_inclinacion_peligrosa_1 <- data %>% dplyr::filter(inclinacion_peligrosa == 1)
 
-# undersampling
 set.seed(2023)
 indeces_inclinacion_peligrosa_0 <- caret::createDataPartition(data_inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.125, list = FALSE)
 undersampled_data <- data_inclinacion_peligrosa_0[indeces_inclinacion_peligrosa_0, ]
@@ -35,7 +39,9 @@ undersampled_data <- data_inclinacion_peligrosa_0[indeces_inclinacion_peligrosa_
 # merge
 balanced_data <- rbind(data_inclinacion_peligrosa_1, undersampled_data)  # bind rows
 balanced_data <- balanced_data[order(balanced_data$id), ]  # ordena por id
+```
 
+```{r}
 # split by 80/20
 set.seed(2023)
 indeces_train <- caret::createDataPartition(balanced_data$inclinacion_peligrosa, p = 0.8, list = FALSE)
@@ -52,6 +58,32 @@ percent_validation <- validation_1 / rows_validation * 100
 # guardar
 write.csv(train_data, "data/data-tests/arbolado-mendoza-dataset-train.csv", row.names = FALSE)
 write.csv(validation_data, "data/data-tests/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
+```
+
+## Cost Sensitive Learning
+
+```{r}
+# split by 80/20
+indeces_train <- caret::createDataPartition(data$inclinacion_peligrosa, p = 0.8, list = FALSE)
+train_data <- data[indeces_train, ]
+validation_data <- data[-indeces_train, ]
+
+write.csv(train_data, "data/data-tests/arbolado-mendoza-dataset-train.csv", row.names = FALSE)
+write.csv(validation_data, "data/data-tests/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
+```
+
+```{r}
+# class weights
+class_distribution <- table(train_data$inclinacion_peligrosa)
+class_weights <- 1000 / class_distribution
+```
+
+## Over-sampling and Under-sampling
+
+```{r}
+data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "both", seed = 2023)$data
+
+percentage_1 <- data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(data) * 100
 ```
 
 # Feature Engineering
@@ -85,31 +117,8 @@ peligrosidad_encoding <- function(data, column, new_column) {
 ## Peligrosidad por Especie
 
 ```{r}
-# especies_peligrosas <- train_data %>%
-#     dplyr::group_by(especie) %>%  # agrupa por especie
-#     dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
-#     dplyr::mutate(peligrosidad_especie = peligrosa_count / total_count)
-
 especies_peligrosas <- peligrosidad_encoding(train_data, "especie", "peligrosidad_especie")
-```
 
-### Gráfico de Peligrosidad por Especie
-
-```{r}
-ggplot(especies_peligrosas,
-       aes(x = reorder(especie, -peligrosidad_especie),
-           y = peligrosidad_especie,
-           fill = reorder(especie, -peligrosidad_especie))) +
-    geom_bar(stat = "identity") +
-    scale_fill_manual(values = rainbow(length(unique(especies_peligrosas$especie)))) +
-    labs(x = "Especie del Arbol", y = "Proporcion de Inclinacion Peligrosa") +
-    ggtitle("Peligrosidad por Especie de Arbol") +
-    theme(axis.text.x = element_text(angle = 90, hjust = 1))
-```
-
-### Reemplazo de Columna de Especie por Peligrosidad por Especie
-
-```{r}
 train_data <- train_data %>%
     left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
 
@@ -118,17 +127,13 @@ validation_data <- validation_data %>%
 
 train_data$especie <- NULL
 validation_data$especie <- NULL
-train_data
 ```
 
 ## Peligrosidad por Diámetro
 
 ```{r}
 diametro_peligroso <- peligrosidad_encoding(train_data, "diametro_tronco", "peligrosidad_diametro")
-print(diametro_peligroso)
-```
 
-```{r}
 train_data <- train_data %>%
     left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
 
@@ -137,17 +142,13 @@ validation_data <- validation_data %>%
 
 train_data$diametro_tronco <- NULL
 validation_data$diametro_tronco <- NULL
-validation_data
 ```
 
 ## Peligrosidad por Altura
 
 ```{r}
 altura_peligrosa <- peligrosidad_encoding(train_data, "altura", "peligrosidad_altura")
-print(altura_peligrosa)
-```
 
-```{r}
 train_data <- train_data %>%
 	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
 
@@ -156,7 +157,6 @@ validation_data <- validation_data %>%
 
 train_data$altura <- NULL
 validation_data$altura <- NULL
-validation_data
 ```
 
 ## Peligrosidad por Sección
@@ -193,29 +193,31 @@ plot(results)
 # Modelo
 
 ```{r}
-rf <- randomForest(inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion,
-                   data = train_data,
-                   ntree = 1000
-				   #mtry = 3,  # Number of variables randomly sampled at each split. Default values: for classification sqrt(p) and regression p/3
+formula <- inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion
+rf_model <- randomForest(formula,
+                         data = train_data,
+                         ntree = 800,
+                         #classwt = class_weights,
+						 importance = TRUE
+                         #mtry = 3,  # Number of variables randomly sampled at each split. Default values: for classification sqrt(p) and regression p/3
                    )
 ```
 
 ```{r}
-rf
-varImpPlot(rf)
+rf_model
+varImpPlot(rf_model)
 ```
 
 # Predicción
 
 ```{r}
-predictions <- predict(rf, validation_data)
+predictions <- predict(rf_model, validation_data)
 confusion_matrix <- confusionMatrix(predictions, validation_data$inclinacion_peligrosa)
 confusion_matrix
 ```
 
 ```{r}
 predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un factor, hay que pasarlo a numeric
-
 result_dataset <- data.frame(id = validation_data$id, inclinacion_peligrosa = predictions_numeric)
 ```
 

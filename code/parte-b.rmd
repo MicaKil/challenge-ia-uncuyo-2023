@@ -11,6 +11,7 @@ library(dplyr)
 library(ggplot2)
 library(lattice)
 library(caret)
+library(ROSE)
 library(randomForest)
 ```
 
@@ -107,42 +108,49 @@ data$altura <- NULL
 test_data$altura <- NULL
 ```
 
+## Cost Sensitive Learning
+
+```{r}
+class_distribution <- table(data$inclinacion_peligrosa)
+class_weights <- 1000 / class_distribution
+```
+
 ## UnderSampling
 ```{r}
-inclinacion_peligrosa_0 <- data %>% filter(inclinacion_peligrosa == 0)
-inclinacion_peligrosa_1 <- data %>% filter(inclinacion_peligrosa == 1)
-
-set.seed(2023)
-indeces <- caret::createDataPartition(inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.125, list = FALSE)
-undersampled_data <- inclinacion_peligrosa_0[indeces, ]
-
-train_data <- rbind(inclinacion_peligrosa_1, undersampled_data)  # bind rows
-train_data <- train_data[order(train_data$id), ]  # ordena por id
-
-# calculate percentage of inclinacion_peligrosa == 1 in train_data
-percent_1 <- train_data %>% filter(inclinacion_peligrosa == 1) %>% nrow() / train_data %>% nrow()
+train_data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "under", seed = 2023)$data
 
 write.csv(train_data, "data/data-parte-b/arbolado-mza-dataset-train.csv", row.names = FALSE)
+```
+
+## Oversampling y UnderSampling
+
+```{r}
+train_data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "both", seed = 2023)$data
+
+percentage_1 <- train_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(train_data) * 100
 ```
 
 # Modelo y Entrenamiento
 
 ```{r}
-rf <- randomForest(inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion,
-                   data = train_data,
-				   ntree = 800,
-			       )
+formula <- inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion
+rf_model <- randomForest(formula,
+                         data = data,
+						 classwt = class_weights,
+                         ntree = 800,
+                         importance = TRUE)
+
 #print(rf)
 ```
 
 ```{r}
-varImpPlot(rf)
+varImpPlot(rf_model)
 ```
 
 # Predicción y Envío
 
 ```{r}
-predictions <- predict(rf, test_data)
+predictions <- predict(rf_model, test_data)
 predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un factor, hay que pasarlo a numeric
 
 #print(predictions_numeric)
