@@ -32,7 +32,7 @@ test_data$ultima_modificacion <- NULL
 test_data$area_seccion <- NULL
 ```
 
-## Feature Engineering: Peligrosidad Encoding
+## Feature Engineering
 
 ```{r}
 peligrosidad_encoding <- function(data, column, new_column) {
@@ -108,39 +108,55 @@ data$altura <- NULL
 test_data$altura <- NULL
 ```
 
-## Cost Sensitive Learning
+
+
+## Balanceo de Clases
+
+### Cost Sensitive Learning
 
 ```{r}
-class_distribution <- table(data$inclinacion_peligrosa)
+class_distribution <- table(train_data$inclinacion_peligrosa)
 class_weights <- 1000 / class_distribution
 ```
 
-## UnderSampling
+### UnderSampling
+
 ```{r}
-train_data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "under", seed = 2023)$data
+train_data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "under", seed = 2023)$data  # default p = 0.5
 
 write.csv(train_data, "data/data-parte-b/arbolado-mza-dataset-train.csv", row.names = FALSE)
 ```
 
-## Oversampling y UnderSampling
+### Oversampling y UnderSampling
 
 ```{r}
 train_data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "both", seed = 2023)$data
 
-percentage_1 <- train_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(train_data) * 100
+#percentage_1 <- train_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(train_data) * 100
 ```
+
+### Oversampling
+
+```{r}
+#percent <- data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(data) * 100
+
+train_data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "over", p = 0.25, seed = 2023)$data
+# p = 0.25 es el porcentaje de la clase minoritaria que se quiere alcanzar
+```
+
+
 
 # Modelo y Entrenamiento
 
 ```{r}
 formula <- inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion
 rf_model <- randomForest(formula,
-                         data = data,
+                         data = train_data,
 						 classwt = class_weights,
                          ntree = 800,
                          importance = TRUE)
 
-#print(rf)
+#print(rf_model)
 ```
 
 ```{r}
@@ -159,5 +175,5 @@ predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un
 ```{r}
 result_dataset <- data.frame(id = test_data$id, inclinacion_peligrosa = predictions_numeric)
 
-write.csv(result_dataset, "data/data-parte-b/submission.csv", row.names = FALSE)
+write.csv(result_dataset, "data/data-parte-b/submission_9.csv", row.names = FALSE)
 ```

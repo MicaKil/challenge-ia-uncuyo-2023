@@ -1,0 +1,10 @@
+submission; result; observation
+1; 0.517; Applied undersampling to the majority class, reducing it to 0.6, and performed feature engineering on "especies"
+2; 0.69714; CHANGED Adjusted undersampling to 0.15 for the majority class
+3; 0.70421; CHANGED Adjusted undersampling to 0.15 for the majority class
+4; 0.70871; CHANGED Further reduced undersampling to 0.125 for the majority class
+5; 0.71767; ADDED Introduced new feature engineering on "altura" and "diametro"
+6; 0.71641; ADDED Incorporated additional feature engineering for "seccion"
+7; 0.70789; CHANGED Modified the strategy by both oversampling and undersampling
+8; 0.6936; CHANGED Altered the approach to use cost-sensitive learning
+9; 0.69834; CHANGED Combined cost-sensitive learning with oversampling the minority class up to 0.5
