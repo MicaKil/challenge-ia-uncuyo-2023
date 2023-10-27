@@ -12,7 +12,12 @@ library(ggplot2)
 library(lattice)
 library(caret)
 library(randomForest)
+library(xgboost)
 library(ROSE)
+library(snow)
+
+cl <- makeCluster(4, type = "SOCK")
+stopCluster(cl)
 ```
 
 # Balance de Datos
@@ -190,7 +195,7 @@ predictors(results)
 plot(results)
 ```
 
-# Modelo
+# Random Forest
 
 ```{r}
 formula <- inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion
@@ -208,7 +213,7 @@ rf_model
 varImpPlot(rf_model)
 ```
 
-# Predicción
+## Predicción
 
 ```{r}
 predictions <- predict(rf_model, validation_data)
@@ -216,11 +221,70 @@ confusion_matrix <- confusionMatrix(predictions, validation_data$inclinacion_pel
 confusion_matrix
 ```
 
-```{r}
-predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un factor, hay que pasarlo a numeric
-result_dataset <- data.frame(id = validation_data$id, inclinacion_peligrosa = predictions_numeric)
-```
+# XGBoost
 
 ```{r}
-#write.csv(result_dataset, "data/data-tests/arbolado-mendoza-dataset-result.csv", row.names = FALSE)
+# define predictor y response
+train_x <- data.matrix(train_data %>% select(-inclinacion_peligrosa, -id))
+train_y <- train_data$inclinacion_peligrosa
+
+test_x <- data.matrix(validation_data %>% select(-inclinacion_peligrosa, -id))
+test_y <- validation_data$inclinacion_peligrosa
+
+train_y <- ifelse(train_y == 1, 0, 1)
+test_y <- ifelse(test_y == 1, 0, 1)
+
+xgb_train <- xgb.DMatrix(data = as.matrix(train_x), label = train_y)
+xgb_test <- xgb.DMatrix(data = as.matrix(test_x), label = test_y)
+```
+
+# Entrenamiento
+
+```{r}
+watchlist <- list(train = xgb_train, test = xgb_test)
+
+param <- list(booster = "gbtree",
+              objective = "binary:logistic",
+              eta = 0.1,
+              gamma = 1,
+              max_depth = 3,
+              subsample = 0.8,
+              colsample_bytree = 0.8,
+              eval_metric = "auc",
+              nthread = 4)
+
+# eta control the learning rate: scale the contribution of each tree by a factor of 0 < eta < 1 when it is added to the current approximation. Used to prevent overfitting by making the boosting process more conservative. Lower value for eta implies larger value for nrounds: low eta value means model more robust to overfitting but slower to compute
+
+# Also note that the max.depth argument specifies how deep to grow the individual decision trees. We typically choose this number to be quite low like 2 or 3 so that smaller trees are grown. It has been shown that this approach tends to produce more accurate models.
+
+# subsample subsample ratio of the training instance. Setting it to 0.5 means that xgboost randomly collected half of the data instances to grow trees and this will prevent overfitting. It makes computation shorter (because less data to analyse). It is advised to use this parameter with eta and increase nrounds. Default: 1
+
+xgb_model <- xgb.train(param, xgb_train, nrounds = 1200, early_stopping_rounds = 100, watchlist)
+var_imp <- xgb.importance(feature_names = colnames(train_x), model = xgb_model)
+
+xgb.plot.importance(var_imp)
+xgb_model
+```
+
+## Boosting
+```{r}
+final <- xgb.train(param, xgb_train, nrounds = 384, early_stopping_rounds = 100, watchlist)
+final
+```
+
+## Predicción
+
+```{r}
+predictions <- predict(final, xgb_test)
+bin_predictions <- ifelse(predictions > 0.5, 1, 0)
+```
+
+## Evaluación
+
+```{r}
+test_y <- as.factor(test_y)
+bin_predictions <- as.factor(bin_predictions)
+
+confusion_matrix <- confusionMatrix(bin_predictions, test_y)
+confusion_matrix
 ```
