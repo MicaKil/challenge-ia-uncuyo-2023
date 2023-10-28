@@ -16,7 +16,6 @@ library(lattice)
 library(caret)
 library(ROSE)
 library(xgboost)
-library(fastDummies)
 ```
 
 # Preparación de los Datos
@@ -158,8 +157,6 @@ print(train_data)
 print(validation_data)
 print(test_data)
 ```
-
-# Random Forest
 
 # XGBoost
 
