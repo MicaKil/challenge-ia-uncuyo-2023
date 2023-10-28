@@ -14,10 +14,10 @@ library(caret)
 library(randomForest)
 library(xgboost)
 library(ROSE)
-library(snow)
-
-cl <- makeCluster(4, type = "SOCK")
-stopCluster(cl)
+# library(snow)
+#
+# cl <- makeCluster(4, type = "SOCK")
+# stopCluster(cl)
 ```
 
 # Balance de Datos
@@ -29,6 +29,12 @@ data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
 # remueve columnas innecesarias
 data$ultima_modificacion <- NULL
 data$area_seccion <- NULL
+
+
+data_test_harpo <- read.csv("data/data-tests/arbolado-mza-dataset-test.csv")
+data$ultima_modificacion <- NULL
+data$area_seccion <- NULL
+
 ```
 
 ## Under-sampling
@@ -231,11 +237,18 @@ train_y <- train_data$inclinacion_peligrosa
 test_x <- data.matrix(validation_data %>% select(-inclinacion_peligrosa, -id))
 test_y <- validation_data$inclinacion_peligrosa
 
-train_y <- ifelse(train_y == 1, 0, 1)
-test_y <- ifelse(test_y == 1, 0, 1)
+train_y <- ifelse(train_y == 1, 1, 0)
+test_y <- ifelse(test_y == 1, 1, 0)
 
 xgb_train <- xgb.DMatrix(data = as.matrix(train_x), label = train_y)
 xgb_test <- xgb.DMatrix(data = as.matrix(test_x), label = test_y)
+
+test_harpo_x <- data.matrix(data_test_harpo %>% select(-id))
+xgb_harpo <- xgb.DMatrix(data = as.matrix(test_harpo_x))
+
+test_harpo_x
+train_x
+
 ```
 
 # Entrenamiento
@@ -246,12 +259,13 @@ watchlist <- list(train = xgb_train, test = xgb_test)
 param <- list(booster = "gbtree",
               objective = "binary:logistic",
               eta = 0.1,
-              gamma = 1,
+              #gamma = 1,
               max_depth = 3,
-              subsample = 0.8,
-              colsample_bytree = 0.8,
-              eval_metric = "auc",
-              nthread = 4)
+              #subsample = 0.8,
+              #colsample_bytree = 0.8,
+              eval_metric = "auc"
+              #nthread = 4)
+			  )
 
 # eta control the learning rate: scale the contribution of each tree by a factor of 0 < eta < 1 when it is added to the current approximation. Used to prevent overfitting by making the boosting process more conservative. Lower value for eta implies larger value for nrounds: low eta value means model more robust to overfitting but slower to compute
 
@@ -266,17 +280,15 @@ xgb.plot.importance(var_imp)
 xgb_model
 ```
 
-## Boosting
-```{r}
-final <- xgb.train(param, xgb_train, nrounds = 384, early_stopping_rounds = 100, watchlist)
-final
-```
-
 ## Predicción
 
 ```{r}
-predictions <- predict(final, xgb_test)
+predictions <- predict(xgb_model, xgb_test)
+predictions
 bin_predictions <- ifelse(predictions > 0.5, 1, 0)
+
+
+predictions <- predict(xgb_model, xgb_harpo)
 ```
 
 ## Evaluación

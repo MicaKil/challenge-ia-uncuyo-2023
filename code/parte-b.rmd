@@ -110,8 +110,6 @@ data$altura <- NULL
 test_data$altura <- NULL
 ```
 
-
-
 ## Balanceo de Clases
 
 ### Cost Sensitive Learning
