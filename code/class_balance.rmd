@@ -1,0 +1,38 @@
+---
+title: "Parte B"
+output: html_document
+author: "Micaela Del Longo @MicaKil"
+---
+
+## Balanceo de Clases
+
+### Cost Sensitive Learning
+
+```{r}
+class_distribution <- table(data$inclinacion_peligrosa)
+class_probability <- class_distribution / sum(class_distribution)
+class_weights <- class_distribution[2] / class_distribution
+```
+
+### UnderSampling
+
+```{r}
+data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "under")$data  # default p = 0.5
+```
+
+### Oversampling y UnderSampling
+
+```{r}
+data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "both")$data
+
+#percentage_1 <- train_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(train_data) * 100
+```
+
+### Oversampling
+
+```{r}
+#percent <- data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(data) * 100
+
+data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "over", p = 0.25)$data
+# p = 0.25 es el porcentaje de la clase minoritaria que se quiere alcanzar
+```

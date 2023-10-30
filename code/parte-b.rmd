@@ -22,122 +22,12 @@ library(randomForest)
 
 ```{r}
 data <- read.csv("data/data-parte-b/arbolado-mza-dataset.csv")
-# remueve columnas innecesarias
 data$ultima_modificacion <- NULL
 data$area_seccion <- NULL
 
 test_data <- read.csv("data/data-parte-b/arbolado-mza-dataset-test.csv")
 test_data$ultima_modificacion <- NULL
 test_data$area_seccion <- NULL
-```
-
-## Feature Engineering
-
-```{r}
-peligrosidad_encoding <- function(data, column, new_column) {
-    peligrosidad <- data %>%
-        dplyr::group_by(!!sym(column)) %>%
-        dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
-        dplyr::mutate({{new_column}} := peligrosa_count / total_count)
-
-    return(peligrosidad)
-}
-```
-
-### Reemplazo de Columna de Especie por Peligrosidad por Especie
-
-```{r}
-especies_peligrosas <- peligrosidad_encoding(data, "especie", "peligrosidad_especie")
-
-data <- data %>%
-    left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
-
-test_data <- test_data %>%
-    left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
-
-data$especie <- NULL
-test_data$especie <- NULL
-```
-
-### Reemplazo de Columna de Sección por Peligrosidad por Sección
-
-```{r}
-secciones_peligrosas <- peligrosidad_encoding(data, "seccion", "peligrosidad_seccion")
-
-data <- data %>%
-	left_join(secciones_peligrosas %>% select(seccion, peligrosidad_seccion), by = "seccion")
-
-test_data <- test_data %>%
-	left_join(secciones_peligrosas %>% select(seccion, peligrosidad_seccion), by = "seccion")
-
-data$nombre_seccion <- NULL
-data$seccion <- NULL
-
-test_data$nombre_seccion <- NULL
-test_data$seccion <- NULL
-```
-
-### Reemplazo de Columna de Diámetro por Peligrosidad por Diámetro
-
-```{r}
-diametro_peligroso <- peligrosidad_encoding(data, "diametro_tronco", "peligrosidad_diametro")
-
-data <- data %>%
-	left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
-
-test_data <- test_data %>%
-	left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
-
-data$diametro_tronco <- NULL
-test_data$diametro_tronco <- NULL
-```
-
-### Reemplazo de Columna de Altura por Peligrosidad por Altura
-
-```{r}
-altura_peligrosa <- peligrosidad_encoding(data, "altura", "peligrosidad_altura")
-
-data <- data %>%
-	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
-
-test_data <- test_data %>%
-	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
-
-data$altura <- NULL
-test_data$altura <- NULL
-```
-
-## Balanceo de Clases
-
-### Cost Sensitive Learning
-
-```{r}
-class_distribution <- table(data$inclinacion_peligrosa)
-class_probability <- class_distribution / sum(class_distribution)
-class_weights <- class_distribution[2] / class_distribution
-```
-
-### UnderSampling
-
-```{r}
-data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "under", seed = 2023)$data  # default p = 0.5
-```
-
-### Oversampling y UnderSampling
-
-```{r}
-data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "both", seed = 2023)$data
-
-#percentage_1 <- train_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(train_data) * 100
-```
-
-### Oversampling
-
-```{r}
-#percent <- data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(data) * 100
-
-data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "over", p = 0.25, seed = 2023)$data
-# p = 0.25 es el porcentaje de la clase minoritaria que se quiere alcanzar
 ```
 
 # Random Forest
@@ -169,19 +59,17 @@ varImpPlot(rf_model)
 ```{r}
 predictions <- predict(rf_model, test_data)
 predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un factor, hay que pasarlo a numeric
-
-print(predictions_numeric)
 ```
 
 ```{r}
 result_dataset <- data.frame(id = test_data$id, inclinacion_peligrosa = predictions_numeric)
 
-write.csv(result_dataset, "data/submissions/submission_18.csv", row.names = FALSE)
+write.csv(result_dataset, "data/submissions/submission_20.csv", row.names = FALSE)
 ```
 
 
 ```{r}
-sub5 <- read.csv("data/submissions/submission_5_71767.csv")
+sub20 <- read.csv("data/submissions/submission_20.csv")
 percent <- sum(sub5$inclinacion_peligrosa == 1) / nrow(sub5) * 100
 print(percent)
 

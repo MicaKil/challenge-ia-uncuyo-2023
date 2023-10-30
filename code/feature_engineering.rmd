@@ -1,0 +1,124 @@
+---
+title: "Parte B"
+output: html_document
+author: "Micaela Del Longo @MicaKil"
+---
+
+# Peligrosidad Encoding
+
+```{r}
+peligrosidad_encoding <- function(data, column, new_column) {
+    peligrosidad <- data %>%
+        dplyr::group_by(!!sym(column)) %>%
+        dplyr::summarize(peligrosa_count = sum(inclinacion_peligrosa == 1), total_count = n()) %>%
+        dplyr::mutate({{new_column}} := peligrosa_count / total_count)
+
+    return(peligrosidad)
+}
+
+# p <- peligrosidad_encoding(train_data, "especie", "peligrosidad_especie")
+# p
+```
+
+## Peligrosidad por Especie
+
+```{r}
+especies_peligrosas <- peligrosidad_encoding(train_data, "especie", "peligrosidad_especie")
+
+train_data <- train_data %>%
+    left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
+
+train_data$especie <- NULL
+```
+
+```{r}
+test_data <- test_data %>%
+	left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
+
+test_data$especie <- NULL
+```
+
+```{r}
+validation_data <- validation_data %>%
+	left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
+
+validation_data$especie <- NULL
+```
+
+## Peligrosidad por Diámetro
+
+```{r}
+diametro_peligroso <- peligrosidad_encoding(train_data, "diametro_tronco", "peligrosidad_diametro")
+
+train_data <- train_data %>%
+    left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
+
+train_data$diametro_tronco <- NULL
+```
+
+```{r}
+test_data <- test_data %>%
+	left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
+
+test_data$diametro_tronco <- NULL
+```
+
+```{r}
+validation_data <- validation_data %>%
+	left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
+
+validation_data$diametro_tronco <- NULL
+```
+
+## Peligrosidad por Altura
+
+```{r}
+altura_peligrosa <- peligrosidad_encoding(train_data, "altura", "peligrosidad_altura")
+
+train_data <- train_data %>%
+	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
+
+train_data$altura <- NULL
+```
+
+```{r}
+test_data <- test_data %>%
+	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
+
+test_data$altura <- NULL
+```
+
+```{r}
+validation_data <- validation_data %>%
+	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
+
+validation_data$altura <- NULL
+```
+
+## Peligrosidad por Sección
+
+```{r}
+seccion_peligrosa <- peligrosidad_encoding(train_data, "nombre_seccion", "peligrosidad_seccion")
+
+train_data <- train_data %>%
+	left_join(seccion_peligrosa %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
+
+train_data$nombre_seccion <- NULL
+train_data$seccion <- NULL
+```
+
+```{r}
+test_data <- test_data %>%
+	left_join(seccion_peligrosa %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
+
+test_data$nombre_seccion <- NULL
+test_data$seccion <- NULL
+```
+
+```{r}
+validation_data <- validation_data %>%
+	left_join(seccion_peligrosa %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
+
+validation_data$nombre_seccion <- NULL
+validation_data$seccion <- NULL
+```

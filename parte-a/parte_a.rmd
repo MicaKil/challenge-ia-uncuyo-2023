@@ -12,6 +12,7 @@ library(ggplot2)
 library(tidyr)
 library(rpart)
 library(caret)
+library(ROSE)
 ```
 Antes de realizar un primer envío se deben realizar las siguientes actividades:
 
@@ -28,27 +29,11 @@ data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
 data_inclinacion_peligrosa_0 <- data %>% filter(inclinacion_peligrosa == 0)
 data_inclinacion_peligrosa_1 <- data %>% filter(inclinacion_peligrosa == 1)
 
-# undersampling
-set.seed(2023)
-indeces_inclinacion_peligrosa_0 <- caret::createDataPartition(data_inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.125, list = FALSE)
-undersampled_data <- data_inclinacion_peligrosa_0[indeces_inclinacion_peligrosa_0, ]
-
-# merge
-balanced_data <- rbind(data_inclinacion_peligrosa_1, undersampled_data)  # bind rows
-balanced_data <- balanced_data[order(balanced_data$id), ]  # ordena por id
-
 # split by 80/20
 set.seed(2023)
-indeces_train <- caret::createDataPartition(balanced_data$inclinacion_peligrosa, p = 0.8, list = FALSE)
-train_data <- balanced_data[indeces_train, ]
-validation_data <- balanced_data[-indeces_train, ]
-
-train_1 <- train_data %>% filter(inclinacion_peligrosa == 1) %>% nrow()
-rows_train <- nrow(train_data)
-percent_train <- train_1 / rows_train * 100
-validation_1 <- validation_data %>% filter(inclinacion_peligrosa == 1) %>% nrow()
-rows_validation <- nrow(validation_data)
-percent_validation <- validation_1 / rows_validation * 100
+indeces_train <- caret::createDataPartition(data$inclinacion_peligrosa, p = 0.8, list = FALSE)
+train_data <- data[indeces_train, ]
+validation_data <- data[-indeces_train, ]
 
 # guardar
 write.csv(train_data, "data/data-parte-a/arbolado-mendoza-dataset-train.csv", row.names = FALSE)
@@ -79,7 +64,7 @@ ggplot(train_data, aes(x = factor(inclinacion_peligrosa), fill = factor(inclinac
     labs(x = "Inclinacion Peligrosa", y = "Frecuencia") +
     ggtitle("Distribucion de la Clase Inclinacion Peligrosa")
 
-ggsave("pics_balanced/2_1_distribucion_inclinacion_peligrosa.png", plot = last_plot(), width = 6, height = 4)
+#ggsave("pics/2_1_distribucion_inclinacion_peligrosa.png", plot = last_plot(), width = 6, height = 4)
 ```
 
 
@@ -100,7 +85,7 @@ ggplot(secciones_peligrosas, aes(x = factor(seccion), y = peligrosidad, fill = f
     labs(x = "Seccion Administrativa", y = "Proporcion de Inclinacion Peligrosa") +
     ggtitle("Peligrosidad por Seccion Administrativa")
 
-ggsave("pics_balanced/2_2_peligrosidad_secciones.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/2_2_peligrosidad_secciones.png", plot = last_plot(), width = 8, height = 6)
 
 nombre_secciones_peligrosas <- train_data %>%
     dplyr::group_by(nombre_seccion) %>%
@@ -116,7 +101,7 @@ ggplot(nombre_secciones_peligrosas, aes(x = factor(nombre_seccion), y = peligros
     ggtitle("Peligrosidad por Seccion Administrativa (Nombre)") +
     theme(axis.text.x = element_text(angle = 45, hjust = 1))
 
-ggsave("pics_balanced/2_2_peligrosidad_nombre_secciones.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/2_2_peligrosidad_nombre_secciones.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 
@@ -136,7 +121,7 @@ ggplot(especies_peligrosas, aes(x = reorder(especie, -peligrosidad), y = peligro
     ggtitle("Peligrosidad por Especie de Arbol") +
     theme(axis.text.x = element_text(angle = 90, hjust = 1))
 
-ggsave("pics_balanced/2_3_peligrosidad_especies.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/2_3_peligrosidad_especies.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 
@@ -154,7 +139,7 @@ ggplot(train_data, aes(x = circ_tronco_cm)) +
     labs(title = "Histograma de Circunferencia del Tronco (Bins = 10)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
     scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-ggsave("pics_balanced/3_1_histograma_circ_tronco_bins_10.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/3_1_histograma_circ_tronco_bins_10.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
@@ -164,7 +149,7 @@ ggplot(train_data, aes(x = circ_tronco_cm)) +
     labs(title = "Histograma de Circunferencia del Tronco (Bins = 20)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
     scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-ggsave("pics_balanced/3_1_histograma_circ_tronco_bins_20.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/3_1_histograma_circ_tronco_bins_20.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
@@ -174,7 +159,7 @@ ggplot(train_data, aes(x = circ_tronco_cm)) +
     labs(title = "Histograma de Circunferencia del Tronco (Bins = 30)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
     scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-ggsave("pics_balanced/3_1_histograma_circ_tronco_bins_30.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/3_1_histograma_circ_tronco_bins_30.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
@@ -184,7 +169,7 @@ ggplot(train_data, aes(x = circ_tronco_cm)) +
     labs(title = "Histograma de Circunferencia del Tronco (Bins = 40)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
     scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-ggsave("pics_balanced/3_1_histograma_circ_tronco_bins_40.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/3_1_histograma_circ_tronco_bins_40.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
@@ -194,7 +179,7 @@ ggplot(train_data, aes(x = circ_tronco_cm)) +
     labs(title = "Histograma de Circunferencia del Tronco (Bins = 50)", x = "Circunferencia del Tronco (cm)", y = "Frecuencia") +
     scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-ggsave("pics_balanced/3_1_histograma_circ_tronco_bins_50.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/3_1_histograma_circ_tronco_bins_50.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 
@@ -208,7 +193,7 @@ ggplot(train_data, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))
     scale_fill_discrete(name = "Inclinacion") +
     scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-ggsave("pics_balanced/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_10.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_10.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
@@ -218,7 +203,7 @@ ggplot(train_data, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))
     scale_fill_discrete(name = "Inclinacion") +
     scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-ggsave("pics_balanced/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_20.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_20.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
@@ -228,7 +213,7 @@ ggplot(train_data, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))
     scale_fill_discrete(name = "Inclinacion") +
     scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-ggsave("pics_balanced/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_30.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_30.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
@@ -238,7 +223,7 @@ ggplot(train_data, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))
     scale_fill_discrete(name = "Inclinacion") +
     scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-ggsave("pics_balanced/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_40.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_40.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 ```{r}
@@ -248,7 +233,7 @@ ggplot(train_data, aes(x = circ_tronco_cm, fill = factor(inclinacion_peligrosa))
     scale_fill_discrete(name = "Inclinacion") +
     scale_x_continuous(breaks = seq(0, max(train_data$circ_tronco_cm), by = 25))
 
-ggsave("pics_balanced/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_50.png", plot = last_plot(), width = 8, height = 6)
+#ggsave("pics/3_2_histograma_circ_tronco_separado_por_inclinacion_bins_50.png", plot = last_plot(), width = 8, height = 6)
 ```
 
 
@@ -603,7 +588,8 @@ cross_validation <- function(data, num_folds) {
 
 
 ```{r}
-data_train <- read.csv("data/data-parte-a/arbolado-mendoza-dataset-train.csv")
+data <- read.csv("data/data-parte-a/arbolado-mendoza-dataset.csv")
+data_train <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "under")
 data_train$ultima_modificacion <- NULL
 data_train$area_seccion <- NULL
 metrics <- cross_validation(data_train, 10)

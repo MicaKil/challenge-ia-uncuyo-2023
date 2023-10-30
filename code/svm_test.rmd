@@ -1,0 +1,34 @@
+---
+title: "Parte B"
+output: html_document
+author: "Micaela Del Longo @MicaKil"
+---
+```{r}
+# Cargar las bibliotecas necesarias
+library(e1071)  # Para SVM
+library(caret)  # Para preprocesamiento y evaluación del modelo
+```
+
+```{r}
+original_data <- read.csv("data/data-tests/arbolado-mza-dataset.csv")
+
+# Dividir el conjunto de datos en conjuntos de entrenamiento y prueba
+indeces <- createDataPartition(original_data$inclinacion_peligrosa, p = 0.7, list = FALSE)
+data <- original_data[indeces, ]
+test_data <- original_data[-indeces, ]
+```
+
+```{r}
+data$inclinacion_peligrosa <- as.factor(data$inclinacion_peligrosa)
+test_data$inclinacion_peligrosa <- as.factor(test_data$inclinacion_peligrosa)
+
+# Entrenar el modelo SVM
+svm_model <- svm(inclinacion_peligrosa ~ ., data = data, kernel = "radial", cost = 1, type = "C-classification")
+
+# Realizar predicciones en el conjunto de prueba
+predictions <- predict(svm_model, newdata = test_data)
+
+# Evaluar el modelo
+cf <- confusionMatrix(predictions, as.factor(test_data$inclinacion_peligrosa))
+
+```
