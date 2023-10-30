@@ -1,8 +1,9 @@
 ---
-title: "Parte B"
+title: "Parte B: SVM"
 output: html_document
 author: "Micaela Del Longo @MicaKil"
 ---
+
 ```{r}
 # Cargar las bibliotecas necesarias
 library(e1071)  # Para SVM
@@ -10,25 +11,49 @@ library(caret)  # Para preprocesamiento y evaluación del modelo
 ```
 
 ```{r}
-original_data <- read.csv("data/data-tests/arbolado-mza-dataset.csv")
+data <- read.csv("data/data-tests/arbolado-mza-dataset.csv")
+data$area_seccion <- NULL
+data$ultima_modificacion < NULL
 
-# Dividir el conjunto de datos en conjuntos de entrenamiento y prueba
-indeces <- createDataPartition(original_data$inclinacion_peligrosa, p = 0.7, list = FALSE)
-data <- original_data[indeces, ]
-test_data <- original_data[-indeces, ]
+indeces <- createDataPartition(data$inclinacion_peligrosa, p = 0.7, list = FALSE)
+train_data <- data[indeces, ]
+test_data <- data[-indeces, ]
+
+train_data$ultima_modificacion <- NULL
+test_data$ultima_modificacion <- NULL
+
+train_data$area_seccion <- NULL
+test_data$area_seccion <- NULL
 ```
 
 ```{r}
-data$inclinacion_peligrosa <- as.factor(data$inclinacion_peligrosa)
+train_data$inclinacion_peligrosa <- as.factor(train_data$inclinacion_peligrosa)
 test_data$inclinacion_peligrosa <- as.factor(test_data$inclinacion_peligrosa)
+x <- select(train_data, -inclinacion_peligrosa)
+y <- train_data$inclinacion_peligrosa
 
-# Entrenar el modelo SVM
-svm_model <- svm(inclinacion_peligrosa ~ ., data = data, kernel = "radial", cost = 1, type = "C-classification")
+svm_ctrl <- tune.control(sampling = "cross",
+             cross = 5,
+             best.model = TRUE,
+             performance = TRUE)
 
-# Realizar predicciones en el conjunto de prueba
-predictions <- predict(svm_model, newdata = test_data)
+svm_tune <- tune.svm(formula = inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion,
+                     x = x,
+                     y = y,
+                     data = train_data,
+                     tunecontrol = svm_ctrl)
+best.model <- svm_tune$best.model
 
-# Evaluar el modelo
+svm_model <- svm(inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion,
+                 data = train_data,
+                 kernel = "radial",
+                 cost = 1,
+                 cross = 5,
+                 type = "C-classification")
+
+x_test <- select(test_data, -inclinacion_peligrosa)
+predictions <- predict(best.model, newdata = x_test)
+
 cf <- confusionMatrix(predictions, as.factor(test_data$inclinacion_peligrosa))
 
 ```

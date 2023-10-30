@@ -1,8 +1,12 @@
 ---
-title: "Parte B"
+title: "Parte B: Feature Engineering"
 output: html_document
 author: "Micaela Del Longo @MicaKil"
 ---
+
+```{r}
+library(dplyr)
+```
 
 # Peligrosidad Encoding
 
@@ -15,9 +19,6 @@ peligrosidad_encoding <- function(data, column, new_column) {
 
     return(peligrosidad)
 }
-
-# p <- peligrosidad_encoding(train_data, "especie", "peligrosidad_especie")
-# p
 ```
 
 ## Peligrosidad por Especie
