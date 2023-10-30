@@ -9,3 +9,8 @@ submission; result; observation
 8; 0.6936; CHANGED Altered the approach to use cost-sensitive learning
 9; 0.69834; CHANGED Combined cost-sensitive learning with oversampling the minority class up to 0.5
 10; 0.2979; CHANGED Changed the approach xgboost
+11; 0.68753;
+12; 0.64678;
+13; 0.60784; threshold = 0.1
+14; 0.52698; threshold = 0.5
+15; 0.55499; threshold = 0.4

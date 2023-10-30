@@ -13,8 +13,6 @@ library(lattice)
 library(caret)
 library(ROSE)
 library(randomForest)
-library(xgboost)
-library(snow)
 ```
 
 
@@ -24,7 +22,6 @@ library(snow)
 
 ```{r}
 data <- read.csv("data/data-parte-b/arbolado-mza-dataset.csv")
-data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
 # remueve columnas innecesarias
 data$ultima_modificacion <- NULL
 data$area_seccion <- NULL
@@ -47,24 +44,6 @@ peligrosidad_encoding <- function(data, column, new_column) {
 }
 ```
 
-### Reemplazo de Columna de Sección por Peligrosidad por Sección
-
-```{r}
-secciones_peligrosas <- peligrosidad_encoding(data, "nombre_seccion", "peligrosidad_seccion")
-
-data <- data %>%
-	left_join(secciones_peligrosas %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
-
-test_data <- test_data %>%
-	left_join(secciones_peligrosas %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
-
-data$nombre_seccion <- NULL
-data$seccion <- NULL
-
-test_data$nombre_seccion <- NULL
-test_data$seccion <- NULL
-```
-
 ### Reemplazo de Columna de Especie por Peligrosidad por Especie
 
 ```{r}
@@ -78,6 +57,24 @@ test_data <- test_data %>%
 
 data$especie <- NULL
 test_data$especie <- NULL
+```
+
+### Reemplazo de Columna de Sección por Peligrosidad por Sección
+
+```{r}
+secciones_peligrosas <- peligrosidad_encoding(data, "seccion", "peligrosidad_seccion")
+
+data <- data %>%
+	left_join(secciones_peligrosas %>% select(seccion, peligrosidad_seccion), by = "seccion")
+
+test_data <- test_data %>%
+	left_join(secciones_peligrosas %>% select(seccion, peligrosidad_seccion), by = "seccion")
+
+data$nombre_seccion <- NULL
+data$seccion <- NULL
+
+test_data$nombre_seccion <- NULL
+test_data$seccion <- NULL
 ```
 
 ### Reemplazo de Columna de Diámetro por Peligrosidad por Diámetro
@@ -115,22 +112,21 @@ test_data$altura <- NULL
 ### Cost Sensitive Learning
 
 ```{r}
-class_distribution <- table(train_data$inclinacion_peligrosa)
-class_weights <- 1000 / class_distribution
+class_distribution <- table(data$inclinacion_peligrosa)
+class_probability <- class_distribution / sum(class_distribution)
+class_weights <- class_distribution[2] / class_distribution
 ```
 
 ### UnderSampling
 
 ```{r}
-train_data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "under", seed = 2023)$data  # default p = 0.5
-
-write.csv(train_data, "data/data-parte-b/arbolado-mza-dataset-train.csv", row.names = FALSE)
+data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "under", seed = 2023)$data  # default p = 0.5
 ```
 
 ### Oversampling y UnderSampling
 
 ```{r}
-train_data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "both", seed = 2023)$data
+data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "both", seed = 2023)$data
 
 #percentage_1 <- train_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(train_data) * 100
 ```
@@ -140,7 +136,7 @@ train_data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "both
 ```{r}
 #percent <- data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(data) * 100
 
-train_data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "over", p = 0.25, seed = 2023)$data
+data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "over", p = 0.25, seed = 2023)$data
 # p = 0.25 es el porcentaje de la clase minoritaria que se quiere alcanzar
 ```
 
@@ -149,17 +145,22 @@ train_data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "over
 ## Modelo y Entrenamiento
 
 ```{r}
+data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
+
 formula <- inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion
 rf_model <- randomForest(formula,
-                         data = train_data,
-						 classwt = class_weights,
-                         ntree = 800,
-                         importance = TRUE)
-
-#print(rf_model)
+                         data = data,
+                         ntree = 600,
+                         #mtry = 3,  # Number of variables randomly sampled at each split. Default values: for classification sqrt(p) and regression p/3
+                         #classwt = class_probability,
+                         importance = TRUE,
+                         proximity = TRUE,
+                         do.trace = TRUE
+                         )
 ```
 
 ```{r}
+print(rf_model)
 varImpPlot(rf_model)
 ```
 
@@ -169,56 +170,21 @@ varImpPlot(rf_model)
 predictions <- predict(rf_model, test_data)
 predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un factor, hay que pasarlo a numeric
 
-#print(predictions_numeric)
+print(predictions_numeric)
 ```
 
 ```{r}
 result_dataset <- data.frame(id = test_data$id, inclinacion_peligrosa = predictions_numeric)
 
-write.csv(result_dataset, "data/data-parte-b/submission_10.csv", row.names = FALSE)
+write.csv(result_dataset, "data/submissions/submission_18.csv", row.names = FALSE)
 ```
 
-# XGBoost
 
 ```{r}
-train_x <- data.matrix(train_data %>% select(-inclinacion_peligrosa, -id))
-train_y <- train_data$inclinacion_peligrosa
-train_y <- ifelse(train_y == 1, 0, 1)
+sub5 <- read.csv("data/submissions/submission_5_71767.csv")
+percent <- sum(sub5$inclinacion_peligrosa == 1) / nrow(sub5) * 100
+print(percent)
 
-test_x <- data.matrix(test_data %>% select(-id))
-
-xgb_train <- xgb.DMatrix(data = as.matrix(train_x), label = train_y)
-xgb_test <- xgb.DMatrix(data = as.matrix(test_x))
+percent_prediction <- sum(predictions_numeric == 1) / length(predictions_numeric) * 100
+print(percent_prediction)
 ```
-
-```{r}
-#watchlist <- list(train = xgb_train, test = xgb_test)
-
-param <- list(booster = "gbtree",
-              objective = "binary:logistic",
-              eta = 0.1,
-              gamma = 1,
-              max_depth = 3,
-              subsample = 0.8,
-              colsample_bytree = 0.8,
-              eval_metric = "auc",
-              nthread = 4)
-
-xgb_model <- xgb.train(param, xgb_train, nrounds = 1000) # early_stopping_rounds = 100,  watchlist para  usarlos hace falta las rts de test (creo???)
-var_imp <- xgb.importance(feature_names = colnames(train_x), model = xgb_model)
-
-xgb.plot.importance(var_imp)
-xgb_model
-```
-
-```{r}
-prediction_xgb <- predict(xgb_model, xgb_test)
-prediction_xgb <- ifelse(prediction_xgb > 0.5, 1, 0)
-predictions_xgb_numeric <- as.numeric(as.character(prediction_xgb))
-
-result_dataset <- data.frame(id = test_data$id, inclinacion_peligrosa = predictions_xgb_numeric)
-result_dataset$inclinacion_peligrosa <- as.factor(result_dataset$inclinacion_peligrosa)
-
-write.csv(result_dataset, "data/data-parte-b/submission_10.csv", row.names = FALSE)
-```
-

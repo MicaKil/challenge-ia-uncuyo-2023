@@ -12,89 +12,81 @@ library(ggplot2)
 library(lattice)
 library(caret)
 library(randomForest)
-library(xgboost)
 library(ROSE)
-# library(snow)
-#
-# cl <- makeCluster(4, type = "SOCK")
-# stopCluster(cl)
 ```
 
-# Balance de Datos
+# Carga de Datos
 
 ```{r}
 data <- read.csv("data/data-tests/arbolado-mza-dataset.csv")
-data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
+#data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
 
 # remueve columnas innecesarias
 data$ultima_modificacion <- NULL
 data$area_seccion <- NULL
 
-
-data_test_harpo <- read.csv("data/data-tests/arbolado-mza-dataset-test.csv")
-data$ultima_modificacion <- NULL
-data$area_seccion <- NULL
-
+test_data <- read.csv("data/data-tests/arbolado-mza-dataset-test.csv")
+test_data$ultima_modificacion <- NULL
+test_data$area_seccion <- NULL
 ```
 
-## Under-sampling
-
-```{r}
-data_inclinacion_peligrosa_0 <- data %>% dplyr::filter(inclinacion_peligrosa == 0)
-data_inclinacion_peligrosa_1 <- data %>% dplyr::filter(inclinacion_peligrosa == 1)
-
-set.seed(2023)
-indeces_inclinacion_peligrosa_0 <- caret::createDataPartition(data_inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.125, list = FALSE)
-undersampled_data <- data_inclinacion_peligrosa_0[indeces_inclinacion_peligrosa_0, ]
-
-# merge
-balanced_data <- rbind(data_inclinacion_peligrosa_1, undersampled_data)  # bind rows
-balanced_data <- balanced_data[order(balanced_data$id), ]  # ordena por id
-```
+# Split
 
 ```{r}
 # split by 80/20
 set.seed(2023)
-indeces_train <- caret::createDataPartition(balanced_data$inclinacion_peligrosa, p = 0.8, list = FALSE)
-train_data <- balanced_data[indeces_train, ]
-validation_data <- balanced_data[-indeces_train, ]
+indeces_train <- caret::createDataPartition(data$inclinacion_peligrosa, p = 0.8, list = FALSE)
+train_data <- data[indeces_train, ]
+validation_data <- data[-indeces_train, ]
 
-train_1 <- train_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow()
-rows_train <- nrow(train_data)
-percent_train <- train_1 / rows_train * 100
-validation_1 <- validation_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow()
-rows_validation <- nrow(validation_data)
-percent_validation <- validation_1 / rows_validation * 100
+# train_1 <- train_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow()
+# rows_train <- nrow(train_data)
+# percent_train <- train_1 / rows_train * 100
+# validation_1 <- validation_data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow()
+# rows_validation <- nrow(validation_data)
+# percent_validation <- validation_1 / rows_validation * 100
 
 # guardar
 write.csv(train_data, "data/data-tests/arbolado-mendoza-dataset-train.csv", row.names = FALSE)
 write.csv(validation_data, "data/data-tests/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
 ```
 
-## Cost Sensitive Learning
+# Under-sampling
 
 ```{r}
-# split by 80/20
-indeces_train <- caret::createDataPartition(data$inclinacion_peligrosa, p = 0.8, list = FALSE)
-train_data <- data[indeces_train, ]
-validation_data <- data[-indeces_train, ]
+data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "under", seed = 2023)$data
 
-write.csv(train_data, "data/data-tests/arbolado-mendoza-dataset-train.csv", row.names = FALSE)
-write.csv(validation_data, "data/data-tests/arbolado-mendoza-dataset-validation.csv", row.names = FALSE)
+# data_inclinacion_peligrosa_0 <- data %>% dplyr::filter(inclinacion_peligrosa == 0)
+# data_inclinacion_peligrosa_1 <- data %>% dplyr::filter(inclinacion_peligrosa == 1)
+#
+# set.seed(2023)
+# indeces_inclinacion_peligrosa_0 <- caret::createDataPartition(data_inclinacion_peligrosa_0$inclinacion_peligrosa, p = 0.125, list = FALSE)
+# undersampled_data <- data_inclinacion_peligrosa_0[indeces_inclinacion_peligrosa_0, ]
+#
+# # merge
+# balanced_data <- rbind(data_inclinacion_peligrosa_1, undersampled_data)  # bind rows
+# balanced_data <- balanced_data[order(balanced_data$id), ]  # ordena por id
 ```
 
-```{r}
-# class weights
-class_distribution <- table(train_data$inclinacion_peligrosa)
-class_weights <- 1000 / class_distribution
-```
-
-## Over-sampling and Under-sampling
+# Over-sampling and Under-sampling
 
 ```{r}
 data <- ovun.sample(inclinacion_peligrosa ~ ., data = data, method = "both", seed = 2023)$data
 
 percentage_1 <- data %>% dplyr::filter(inclinacion_peligrosa == 1) %>% nrow() / nrow(data) * 100
+```
+
+# Cost Sensitive Learning
+
+```{r}
+# class weights
+class_distribution <- table(train_data$inclinacion_peligrosa)
+class_probability <- class_distribution / sum(class_distribution)
+
+class_weights <- class_distribution[2] / class_distribution
+
+weights <- ifelse(train_data$inclinacion_peligrosa == 1, class_weights[2], class_weights[1])
+weights_prob <- ifelse(train_data$inclinacion_peligrosa == 1, class_probability[2], class_probability[1])
 ```
 
 # Feature Engineering
@@ -133,10 +125,20 @@ especies_peligrosas <- peligrosidad_encoding(train_data, "especie", "peligrosida
 train_data <- train_data %>%
     left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
 
-validation_data <- validation_data %>%
-    left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
-
 train_data$especie <- NULL
+```
+
+```{r}
+test_data <- test_data %>%
+	left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
+
+test_data$especie <- NULL
+```
+
+```{r}
+validation_data <- validation_data %>%
+	left_join(especies_peligrosas %>% select(especie, peligrosidad_especie), by = "especie")
+
 validation_data$especie <- NULL
 ```
 
@@ -148,10 +150,20 @@ diametro_peligroso <- peligrosidad_encoding(train_data, "diametro_tronco", "peli
 train_data <- train_data %>%
     left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
 
-validation_data <- validation_data %>%
-    left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
-
 train_data$diametro_tronco <- NULL
+```
+
+```{r}
+test_data <- test_data %>%
+	left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
+
+test_data$diametro_tronco <- NULL
+```
+
+```{r}
+validation_data <- validation_data %>%
+	left_join(diametro_peligroso %>% select(diametro_tronco, peligrosidad_diametro), by = "diametro_tronco")
+
 validation_data$diametro_tronco <- NULL
 ```
 
@@ -163,10 +175,20 @@ altura_peligrosa <- peligrosidad_encoding(train_data, "altura", "peligrosidad_al
 train_data <- train_data %>%
 	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
 
+train_data$altura <- NULL
+```
+
+```{r}
+test_data <- test_data %>%
+	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
+
+test_data$altura <- NULL
+```
+
+```{r}
 validation_data <- validation_data %>%
 	left_join(altura_peligrosa %>% select(altura, peligrosidad_altura), by = "altura")
 
-train_data$altura <- NULL
 validation_data$altura <- NULL
 ```
 
@@ -178,40 +200,42 @@ seccion_peligrosa <- peligrosidad_encoding(train_data, "nombre_seccion", "peligr
 train_data <- train_data %>%
 	left_join(seccion_peligrosa %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
 
-validation_data <- validation_data %>%
-	left_join(seccion_peligrosa %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
-
 train_data$nombre_seccion <- NULL
 train_data$seccion <- NULL
+```
+
+```{r}
+test_data <- test_data %>%
+	left_join(seccion_peligrosa %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
+
+test_data$nombre_seccion <- NULL
+test_data$seccion <- NULL
+```
+
+```{r}
+validation_data <- validation_data %>%
+	left_join(seccion_peligrosa %>% select(nombre_seccion, peligrosidad_seccion), by = "nombre_seccion")
 
 validation_data$nombre_seccion <- NULL
 validation_data$seccion <- NULL
 ```
 
-# Recursive Feature Elimination
-
-```{r}
-# RFE is popular because it is easy to configure and use and because it is effective at selecting those features (columns) in a training dataset that are more or most relevant in predicting the target variable.
-rfecrtl <- caret::rfeControl(functions=rfFuncs, method="cv", number=10, verbose=TRUE, allowParallel=TRUE)
-results <- caret::rfe(inclinacion_peligrosa ~ circ_tronco_cm + lat + long + seccion + especie + peligrosidad_especie + peligrosidad_diametro,
-                      data=train_data,
-                      sizes=1:10,
-                      rfeControl=rfecrtl)
-predictors(results)
-plot(results)
-```
-
 # Random Forest
 
 ```{r}
+train_data$inclinacion_peligrosa <- as.factor(train_data$inclinacion_peligrosa)
+
 formula <- inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion
+
 rf_model <- randomForest(formula,
                          data = train_data,
-                         ntree = 800,
-                         #classwt = class_weights,
-						 importance = TRUE
+                         ntree = 600,
                          #mtry = 3,  # Number of variables randomly sampled at each split. Default values: for classification sqrt(p) and regression p/3
-                   )
+                         classwt = class_probability,
+                         importance = TRUE,
+                         proximity = TRUE,
+                         do.trace = TRUE
+                         )
 ```
 
 ```{r}
@@ -223,80 +247,27 @@ varImpPlot(rf_model)
 
 ```{r}
 predictions <- predict(rf_model, validation_data)
+validation_data$inclinacion_peligrosa <- as.factor(validation_data$inclinacion_peligrosa)
 confusion_matrix <- confusionMatrix(predictions, validation_data$inclinacion_peligrosa)
 confusion_matrix
 ```
 
-# XGBoost
+# Random Forest 2
 
 ```{r}
-# define predictor y response
-train_x <- data.matrix(train_data %>% select(-inclinacion_peligrosa, -id))
-train_y <- train_data$inclinacion_peligrosa
+train_data$inclinacion_peligrosa <- as.factor(train_data$inclinacion_peligrosa)
 
-test_x <- data.matrix(validation_data %>% select(-inclinacion_peligrosa, -id))
-test_y <- validation_data$inclinacion_peligrosa
+#your_data_factorized <- as.data.frame(lapply(train_data, as.factor))  # factorize all columns
+ctrl <- trainControl(method = "cv", number = 10, classProbs = TRUE)
+formula <- formula(inclinacion_peligrosa ~ .) #circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion)
 
-train_y <- ifelse(train_y == 1, 1, 0)
-test_y <- ifelse(test_y == 1, 1, 0)
+set.seed(2023)
+rf_model <- train(formula,
+                  data = train_data,
+                  method = "rf",
+                  trControl = ctrl,
+                  metric="ROC",
+                  weights = weights_prob)
 
-xgb_train <- xgb.DMatrix(data = as.matrix(train_x), label = train_y)
-xgb_test <- xgb.DMatrix(data = as.matrix(test_x), label = test_y)
-
-test_harpo_x <- data.matrix(data_test_harpo %>% select(-id))
-xgb_harpo <- xgb.DMatrix(data = as.matrix(test_harpo_x))
-
-test_harpo_x
-train_x
-
-```
-
-# Entrenamiento
-
-```{r}
-watchlist <- list(train = xgb_train, test = xgb_test)
-
-param <- list(booster = "gbtree",
-              objective = "binary:logistic",
-              eta = 0.1,
-              #gamma = 1,
-              max_depth = 3,
-              #subsample = 0.8,
-              #colsample_bytree = 0.8,
-              eval_metric = "auc"
-              #nthread = 4)
-			  )
-
-# eta control the learning rate: scale the contribution of each tree by a factor of 0 < eta < 1 when it is added to the current approximation. Used to prevent overfitting by making the boosting process more conservative. Lower value for eta implies larger value for nrounds: low eta value means model more robust to overfitting but slower to compute
-
-# Also note that the max.depth argument specifies how deep to grow the individual decision trees. We typically choose this number to be quite low like 2 or 3 so that smaller trees are grown. It has been shown that this approach tends to produce more accurate models.
-
-# subsample subsample ratio of the training instance. Setting it to 0.5 means that xgboost randomly collected half of the data instances to grow trees and this will prevent overfitting. It makes computation shorter (because less data to analyse). It is advised to use this parameter with eta and increase nrounds. Default: 1
-
-xgb_model <- xgb.train(param, xgb_train, nrounds = 1200, early_stopping_rounds = 100, watchlist)
-var_imp <- xgb.importance(feature_names = colnames(train_x), model = xgb_model)
-
-xgb.plot.importance(var_imp)
-xgb_model
-```
-
-## Predicción
-
-```{r}
-predictions <- predict(xgb_model, xgb_test)
-predictions
-bin_predictions <- ifelse(predictions > 0.5, 1, 0)
-
-
-predictions <- predict(xgb_model, xgb_harpo)
-```
-
-## Evaluación
-
-```{r}
-test_y <- as.factor(test_y)
-bin_predictions <- as.factor(bin_predictions)
-
-confusion_matrix <- confusionMatrix(bin_predictions, test_y)
-confusion_matrix
+rf_model
 ```
