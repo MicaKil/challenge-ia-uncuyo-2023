@@ -7,11 +7,7 @@ author: "Micaela Del Longo @MicaKil"
 # Librerías
 
 ```{r}
-library(dplyr)
-library(ggplot2)
-library(lattice)
 library(caret)
-library(ROSE)
 library(randomForest)
 ```
 
@@ -22,8 +18,9 @@ library(randomForest)
 
 ```{r}
 data <- read.csv("data/data-parte-b/arbolado-mza-dataset.csv")
-data$ultima_modificacion <- NULL
-data$area_seccion <- NULL
+train_data <- data
+train_data$ultima_modificacion <- NULL
+train_data$area_seccion <- NULL
 
 test_data <- read.csv("data/data-parte-b/arbolado-mza-dataset-test.csv")
 test_data$ultima_modificacion <- NULL
@@ -35,17 +32,17 @@ test_data$area_seccion <- NULL
 ## Modelo y Entrenamiento
 
 ```{r}
-data$inclinacion_peligrosa <- factor(data$inclinacion_peligrosa)
+train_data$inclinacion_peligrosa <- factor(train_data$inclinacion_peligrosa)
 
 formula <- inclinacion_peligrosa ~ circ_tronco_cm + lat + long + peligrosidad_especie + peligrosidad_diametro + peligrosidad_altura + peligrosidad_seccion
 rf_model <- randomForest(formula,
-                         data = data,
+                         data = train_data,
                          ntree = 600,
-                         #mtry = 3,  # Number of variables randomly sampled at each split. Default values: for classification sqrt(p) and regression p/3
-                         #classwt = class_probability,
+                         # do.trace = TRUE
+                         # mtry = 3,  # Number of variables randomly sampled at each split. Default values: for classification sqrt(p) and regression p/3
+                         # classwt = class_probability,
                          importance = TRUE,
                          proximity = TRUE,
-                         do.trace = TRUE
                          )
 ```
 
@@ -64,13 +61,13 @@ predictions_numeric <- as.numeric(as.character(predictions)) # predictions es un
 ```{r}
 result_dataset <- data.frame(id = test_data$id, inclinacion_peligrosa = predictions_numeric)
 
-write.csv(result_dataset, "data/submissions/submission_20.csv", row.names = FALSE)
+write.csv(result_dataset, "data/submissions/submission_23.csv", row.names = FALSE)
 ```
 
 
 ```{r}
 sub20 <- read.csv("data/submissions/submission_20.csv")
-percent <- sum(sub5$inclinacion_peligrosa == 1) / nrow(sub5) * 100
+percent <- sum(sub20$inclinacion_peligrosa == 1) / nrow(sub20) * 100
 print(percent)
 
 percent_prediction <- sum(predictions_numeric == 1) / length(predictions_numeric) * 100
