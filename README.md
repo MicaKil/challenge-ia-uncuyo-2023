@@ -3,8 +3,6 @@
 **Estudiante:** Del Longo, Micaela
 **Legajo:** 11653
 
-## ia tu sabe 😉😘
-
 - Link TP: https://docs.google.com/document/d/1BpjICpzWI0zChph9r5vi9_ldnphmD3h2uB4qLGwc0O4/edit#heading=h.5k87ni494szy
 - Link Kaggle: https://www.kaggle.com/competitions/arbolado-publico-mendoza-2023
 
